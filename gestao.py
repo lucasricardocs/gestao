@@ -443,7 +443,7 @@ with tab2:
 # --- Tab 3: Cadastro de Recebimentos ---
 # --- Tab 3: Cadastro de Recebimentos ---
 with tab3:
-    with st.form("daily_receipt_form"):
+    with st.form("daily_receipt_form", clear_on_submit=True):
         data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
         col1, col2, col3 = st.columns(3)
         dinheiro = col1.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
@@ -457,8 +457,15 @@ with tab3:
             df_receipts = pd.concat([df_receipts, new_receipt], ignore_index=True)
             save_data(df_receipts)
             st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
-            st.session_state["daily_receipt_form"] = {}
+            # Remova esta linha: st.session_state["daily_receipt_form"] = {}
             st.rerun()
+
+    if not df_receipts.empty:
+        st.subheader("Recebimentos Registrados")
+        st.dataframe(df_receipts)
+
+    #with col_visualizacao:
+    st.subheader("Visualização dos Recebimentos")
 
     if not df_receipts.empty:
         st.subheader("Recebimentos Registrados")
