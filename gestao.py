@@ -454,7 +454,7 @@ with tab3:
             dinheiro = st.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f")
         with col2:
             cartao = st.number_input("Cartão (R$)", min_value=0.0, step=0.50, format="%.2f")
-        with col3
+        with col3:
             pix = st.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f")
         submitted = st.form_submit_button("Adicionar Recebimento")
         
