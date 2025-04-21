@@ -463,26 +463,6 @@ with tab3:
     if not df_receipts.empty:
         st.subheader("Recebimentos Registrados")
         st.dataframe(df_receipts)
-
-    #with col_visualizacao:
-    st.subheader("Visualização dos Recebimentos")
-
-    if not df_receipts.empty:
-        st.subheader("Recebimentos Registrados")
-        st.dataframe(df_receipts)
-
-    #with col_visualizacao:
-    st.subheader("Visualização dos Recebimentos")
-
-    if not df_receipts.empty:
-        # Converter a coluna 'Data' para datetime se não estiver
-        if not pd.api.types.is_datetime64_any_dtype(df_receipts['Data']):
-            try:
-                df_receipts['Data'] = pd.to_datetime(df_receipts['Data'])
-            except Exception as e:
-                st.error(f"Erro ao converter a coluna 'Data': {e}")
-                st.stop()
-
         df_receipts['Total'] = df_receipts['Dinheiro'] + df_receipts['Cartao'] + df_receipts['Pix']
         df_receipts['Ano'] = df_receipts['Data'].dt.year
         df_receipts['Mes'] = df_receipts['Data'].dt.month
