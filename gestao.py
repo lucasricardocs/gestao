@@ -447,9 +447,10 @@ with tab3:
     
     # Formulário para adicionar novos recebimentos
     with st.form("daily_receipt_form"):
+        data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
         col1, col2, col3 = st.columns(3)
         
-        data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
+        #data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
         with col1:
             dinheiro = st.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f")
         with col2:
