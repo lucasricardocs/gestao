@@ -442,18 +442,14 @@ with tab2:
 
 # --- Tab 3: Cadastro de Recebimentos ---
 with tab3:
-    #st.header("💰 Cadastro de Recebimentos Diários")
-
-    #col_cadastro, col_visualizacao = st.columns(2)
-
-    #with col_cadastro:
-        st.subheader("💰 Cadastro de Recebimentos Diários")
 
         with st.form("daily_receipt_form"):
             data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
-            dinheiro = st.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
-            cartao = st.number_input("Cartão (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
-            pix = st.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
+            col1, col2, col3 = st.columns(3)
+            dinheiro = col1.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
+            cartao = col2.number_input("Cartão (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
+            pix = col3.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
+            
             submitted = st.form_submit_button("Adicionar Recebimento")
 
             if submitted:
@@ -461,7 +457,12 @@ with tab3:
                 df_receipts = pd.concat([df_receipts, new_receipt], ignore_index=True)
                 save_data(df_receipts)
                 st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
+
+                st.session_state["daily_receipt_form"] = {}
                 st.rerun()
+            if not df_receipts.empty:
+            st.subheader("Recebimentos Registrados")
+            st.dataframe(df_receipts)
 
     #with col_visualizacao:
         st.subheader("Visualização dos Recebimentos")
