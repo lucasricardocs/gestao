@@ -449,14 +449,13 @@ with tab3:
     with st.form("daily_receipt_form"):
         col1, col2, col3 = st.columns(3)
         
+        data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
         with col1:
-            data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
-        with col2:
             dinheiro = st.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f")
-        with col3:
+        with col2:
             cartao = st.number_input("Cartão (R$)", min_value=0.0, step=0.50, format="%.2f")
-        
-        pix = st.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f")
+        with col3
+            pix = st.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f")
         submitted = st.form_submit_button("Adicionar Recebimento")
         
         if submitted:
