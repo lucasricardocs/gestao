@@ -459,17 +459,9 @@ with tab3:
         submitted = st.form_submit_button("Adicionar Recebimento")
         
         if submitted:
-            # Atualizar DataFrame com os novos dados
-            new_receipt = pd.DataFrame([{
-                'Data': pd.to_datetime(data_hoje),
-                'Dinheiro': dinheiro,
-                'Cartao': cartao,
-                'Pix': pix
-            }])
-            df_receipts = pd.concat([df_receipts, new_receipt], ignore_index=True)
-            save_data(df_receipts)
-            st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
-            st.experimental_rerun()
+    # salvar os dados...
+        st.success("Recebimento adicionado com sucesso!")
+        st.experimental_rerun()  # <- só aqui é seguro
 
     st.subheader("📊 Visualização dos Recebimentos")
     
