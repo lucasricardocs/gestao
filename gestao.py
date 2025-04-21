@@ -501,6 +501,22 @@ with tab3:
                 df_dia = df_mes[df_mes['Dia'] == dia_selecionado]
             else:
                 df_dia = df_mes.copy()
+
+            # Gráfico de pizza para formas de pagamento
+            st.subheader("🎨 Distribuição por Forma de Pagamento")
+            df_pie = df_mes[['Dinheiro', 'Cartao', 'Pix']].sum().reset_index()
+            df_pie.columns = ['Forma de Pagamento', 'Valor']
+        
+            pie_chart = alt.Chart(df_pie).mark_arc().encode(
+            theta=alt.Theta(field="Valor", type="quantitative"),
+            color=alt.Color(field="Forma de Pagamento", type="nominal"),
+            tooltip=["Forma de Pagamento", "Valor"]
+                ).properties(
+                title="Distribuição de Recebimentos por Forma de Pagamento"
+                )
+            st.altair_chart(pie_chart, use_container_width=True)
+        
+            st.divider()
                 
             st.subheader("Totais Diários")
             df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
