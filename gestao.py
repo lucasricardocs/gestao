@@ -49,34 +49,6 @@ def generate_initial_combination(item_prices, combination_size):
         combination[name] = round_to_50_or_00(random.uniform(1, 10))
     return combination
 
-def adjust_with_onions(combination, item_prices, target_value):
-    """
-    Ajusta a combinação adicionando cebolas se o valor for menor que o target.
-    Retorna a combinação modificada e o valor final.
-    Limita a quantidade máxima de cebolas a 20 unidades.
-    """
-    current_value = calculate_combination_value(combination, item_prices)
-    difference = target_value - current_value
-
-    if difference <= 0 or "Cebola" not in item_prices:
-        return combination, current_value
-
-    onion_price = item_prices["Cebola"]
-    num_onions = min(int(round(difference / onion_price)), 20)  # Limite de 20 cebolas
-
-    if num_onions > 0:
-        current_onions = combination.get("Cebola", 0)
-        total_onions = current_onions + num_onions
-        if total_onions > 20:
-            num_onions = 20 - current_onions
-            if num_onions <= 0:
-                return combination, current_value
-
-        combination["Cebola"] = current_onions + num_onions
-
-    final_value = calculate_combination_value(combination, item_prices)
-    return combination, final_value
-
 def local_search_optimization(item_prices, target_value, combination_size, max_iterations):
     """
     Versão modificada para:
