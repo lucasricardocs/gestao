@@ -488,9 +488,10 @@ with tab2:
                 )
 
 # --- TAB 3: CADASTRO DE RECEBIMENTOS ---
-with tab3:
+with st.tab("💰 Cadastro de Recebimentos Diários"):
     st.subheader("💰 Cadastro de Recebimentos Diários")
 
+    # Formulário para adicionar recebimentos
     with st.form("daily_receipt_form"):
         data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
         col1, col2, col3 = st.columns(3)
@@ -500,23 +501,29 @@ with tab3:
         submitted = st.form_submit_button("Adicionar Recebimento")
 
         if submitted:
-            new_receipt = pd.DataFrame([{'Data': pd.to_datetime(data_hoje), 'Dinheiro': dinheiro, 'Cartao': cartao, 'Pix': pix}])
-            st.session_state['df_receipts'] = pd.concat([st.session_state['df_receipts'], new_receipt], ignore_index=True)
-            save_receipts_data(st.session_state['df_receipts'])
-            st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
-            st.rerun()
+            if dinheiro == 0.0 and cartao == 0.0 and pix == 0.0:
+                st.warning("Por favor, insira ao menos um valor de pagamento.")
+            else:
+                new_receipt = pd.DataFrame([{'Data': pd.to_datetime(data_hoje), 'Dinheiro': dinheiro, 'Cartao': cartao, 'Pix': pix}])
+                st.session_state['df_receipts'] = pd.concat([st.session_state['df_receipts'], new_receipt], ignore_index=True)
+                save_receipts_data(st.session_state['df_receipts'])
+                st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
+                st.experimental_rerun()
 
     st.subheader("Visualização dos Recebimentos")
 
     if not st.session_state['df_receipts'].empty:
         df_receipts = st.session_state['df_receipts'].copy()
+
+        # Garantir que a coluna 'Data' está no formato datetime
         if not pd.api.types.is_datetime64_any_dtype(df_receipts['Data']):
             try:
-                df_receipts['Data'] = pd.to_datetime(df_receipts['Data'])
+                df_receipts['Data'] = pd.to_datetime(df_receipts['Data'], errors='coerce')
             except Exception as e:
                 st.error(f"Erro ao converter a coluna 'Data': {e}")
                 st.stop()
 
+        # Adicionar colunas auxiliares
         df_receipts['Total'] = df_receipts['Dinheiro'] + df_receipts['Cartao'] + df_receipts['Pix']
         df_receipts['Ano'] = df_receipts['Data'].dt.year
         df_receipts['Mes'] = df_receipts['Data'].dt.month
@@ -525,8 +532,8 @@ with tab3:
         # --- Filtros de data ---
         st.subheader("📊 Vendas por Período")
         col_inicio, col_fim = st.columns(2)
-        data_inicial = col_inicio.date_input("Data Inicial", df_receipts['Data'].min().date())
-        data_final = col_fim.date_input("Data Final", df_receipts['Data'].max().date())
+        data_inicial = col_inicio.date_input("Data Inicial", value=df_receipts['Data'].min().date())
+        data_final = col_fim.date_input("Data Final", value=df_receipts['Data'].max().date())
 
         df_periodo = df_receipts[
             (df_receipts['Data'].dt.date >= data_inicial) & 
@@ -536,16 +543,18 @@ with tab3:
         if not df_periodo.empty:
             # --- Gráficos ---
             st.subheader("📈 Gráficos de Recebimentos")
-            
+
             # Gráfico de distribuição por forma de pagamento
-            plot_payment_distribution(df_periodo)
-            
+            st.bar_chart(df_periodo[['Dinheiro', 'Cartao', 'Pix']].sum())
+
             # Gráfico de totais diários
-            plot_daily_totals(df_periodo)
-            
+            df_totais_diarios = df_periodo.groupby('Data').sum(numeric_only=True)[['Total']]
+            st.line_chart(df_totais_diarios)
+
             # Gráfico de evolução das formas de pagamento
-            plot_payment_methods_trend(df_periodo)
-            
+            df_pagamentos_trend = df_periodo.groupby('Data').sum(numeric_only=True)[['Dinheiro', 'Cartao', 'Pix']]
+            st.line_chart(df_pagamentos_trend)
+
             # --- Tabela com dados ---
             st.subheader("📋 Dados Detalhados")
             df_periodo['Data_Formatada'] = df_periodo['Data'].dt.strftime('%d/%m/%Y')
@@ -555,14 +564,13 @@ with tab3:
                 .sort_values('Data', ascending=False)
                 .reset_index(drop=True)
             )
-            
+
             # --- Resumo estatístico ---
             st.subheader("📌 Resumo Estatístico")
             col1, col2, col3 = st.columns(3)
             col1.metric("Total de Dias", len(df_periodo))
             col2.metric("Média Diária", format_currency(df_periodo['Total'].mean()))
             col3.metric("Total no Período", format_currency(df_periodo['Total'].sum()))
-            
         else:
             st.warning("Nenhum dado encontrado para o período selecionado.")
     else:
