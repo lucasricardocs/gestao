@@ -248,6 +248,7 @@ with tab1:
                     'crédito à vista elo': 'Crédito Elo',
                     'crédito à vista mastercard': 'Crédito MasterCard',
                     'crédito à vista visa': 'Crédito Visa',
+                    'crédito à vista american express': 'Crédito Amex',
                     'débito elo': 'Débito Elo',
                     'débito mastercard': 'Débito MasterCard',
                     'débito visa': 'Débito Visa',
