@@ -364,7 +364,7 @@ with tab1:
                     """)
 
                 st.metric("📋 Custo com Contadora", format_currency(custo_contadora))
-                with st.expander("📘 Custo da Contadora"):
+                with st.expander("📋 Custo com Contadora:", format_currency(custo_contadora)
                     st.markdown(f"""
                     - Valor mensal fixo: **{format_currency(custo_contadora)}**
                     - Inclui folha, DAS, declarações, etc.
