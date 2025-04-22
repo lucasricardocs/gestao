@@ -313,24 +313,6 @@ Cerveja R$ 12,00"""
                 # --- Cálculo dos impostos e custos fixos ---
                 with st.container():
                     st.markdown("""
-                    <style>
-                    .custom-box {
-                        border: 1px solid #e0e0e0;
-                        border-radius: 10px;
-                        padding: 20px;
-                        margin-bottom: 20px;
-                        background-color: #f9f9f9;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                    }
-                    .custom-header {
-                        color: #333333;
-                        font-size: 1.3rem;
-                        font-weight: bold;
-                        margin-bottom: 15px;
-                        display: flex;
-                        align-items: center;
-                    }
-                    </style>
                     """, unsafe_allow_html=True)
 
                     st.markdown('<div class="custom-box">', unsafe_allow_html=True)
