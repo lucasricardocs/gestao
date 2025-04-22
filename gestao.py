@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # --- CONSTANTES ---
-CSV_FILE_VENDAS = 'vendas.csv'
+CSV_FILE_VENDAS = 'vendas.csv'  # Alterado de recebimentos.csv para vendas.csv
 DADOS_SANDUICHES = """X Salada Simples R$ 18,00
 X Bacon R$ 22,00
 X Tudo R$ 25,00
@@ -106,7 +106,7 @@ def format_currency(value):
 
 def load_receipts_data():
     """Carrega os dados de vendas do arquivo CSV."""
-    if os.path.exists(CSV_FILE_VENDAS):
+    if os.path.exists(CSV_FILE_VENDAS):  # Alterado para CSV_FILE_VENDAS
         try:
             df = pd.read_csv(CSV_FILE_VENDAS, encoding='utf-8')
             if 'Data' in df.columns:
@@ -126,11 +126,11 @@ def save_receipts_data(df):
     try:
         if 'Data' in df.columns:
             df['Data'] = df['Data'].dt.strftime('%Y-%m-%d')
-        df.to_csv(CSV_FILE_VENDAS, index=False, encoding='utf-8')
+        df.to_csv(CSV_FILE_VENDAS, index=False, encoding='utf-8')  # Alterado para CSV_FILE_VENDAS
         st.success(f"Dados de vendas salvos em '{CSV_FILE_VENDAS}'!")
     except Exception as e:
         st.error(f"Erro ao salvar dados de vendas: {e}")
-
+        
 def plot_payment_distribution(df):
     """Gera gráfico de pizza mostrando a distribuição por forma de pagamento."""
     if not df.empty:
