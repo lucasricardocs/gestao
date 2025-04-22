@@ -5,65 +5,48 @@ from datetime import datetime
 import random
 import os
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(
-    page_title="Sistema de Gestão - Clips Burger", 
-    layout="centered", 
-    initial_sidebar_state="expanded"
-)
+# --- CONFIGURAÇÃO DA PÁGINA (DEVE SER A PRIMEIRA CHAMADA STREAMLIT) ---
+st.set_page_config(page_title="Sistema de Gestao - Clips Burger", layout="centered", initial_sidebar_state="expanded")
 
-# Constantes
+# Nome do arquivo CSV para armazenar os dados de recebimento
 CSV_FILE_RECEBIMENTOS = 'recebimentos.csv'
-SALARIO_MINIMO = 1412.00
-CUSTO_CONTADORA = 316.00
-ALIQUOTA_SIMPLES = 0.06
 
 # ----- Funções Auxiliares -----
 def parse_menu_string(menu_data_string):
-    """Analisa uma string multi-linha contendo itens do cardápio e preços."""
+    """Parses a multi-line string containing menu items and prices."""
     menu = {}
     lines = menu_data_string.strip().split("\n")
-    
     for line in lines:
-        if not line.strip():
-            continue
-            
         parts = line.split("R$ ")
-        if len(parts) != 2:
+        if len(parts) == 2:
+            name = parts[0].strip()
+            try:
+                price = float(parts[1].replace(",", "."))
+                menu[name] = price
+            except ValueError:
+                st.warning(f"Preço inválido para '{name}'. Ignorando item.")
+        elif line.strip():
             st.warning(f"Formato inválido na linha do cardápio: '{line}'. Ignorando linha.")
-            continue
-            
-        name = parts[0].strip()
-        try:
-            price = float(parts[1].replace(",", "."))
-            menu[name] = price
-        except ValueError:
-            st.warning(f"Preço inválido para '{name}'. Ignorando item.")
-            
     return menu
 
 def calculate_combination_value(combination, item_prices):
-    """Calcula o valor total de uma combinação baseada nos preços dos itens."""
+    """Calculates the total value of a combination based on item prices."""
     return sum(item_prices.get(name, 0) * quantity for name, quantity in combination.items())
 
 def round_to_50_or_00(value):
-    """Arredonda para o múltiplo de 0.50 mais próximo."""
+    """Arredonda para o múltiplo de 0.50 mais próximo"""
     return round(value * 2) / 2
 
 def generate_initial_combination(item_prices, combination_size):
-    """Gera uma combinação inicial aleatória para a busca local."""
+    """Generates a random initial combination for the local search."""
     combination = {}
     item_names = list(item_prices.keys())
-    
     if not item_names:
         return combination
-        
     size = min(combination_size, len(item_names))
     chosen_names = random.sample(item_names, size)
-    
     for name in chosen_names:
         combination[name] = round_to_50_or_00(random.uniform(1, 10))
-        
     return combination
 
 def local_search_optimization(item_prices, target_value, combination_size, max_iterations):
@@ -78,19 +61,20 @@ def local_search_optimization(item_prices, target_value, combination_size, max_i
     best_combination = generate_initial_combination(item_prices, combination_size)
     best_combination = {k: round_to_50_or_00(v) for k, v in best_combination.items()}
     current_value = calculate_combination_value(best_combination, item_prices)
+
     best_diff = abs(target_value - current_value) + (10000 if current_value > target_value else 0)
     current_items = list(best_combination.keys())
 
     for _ in range(max_iterations):
-        if not current_items:
-            break
+        if not current_items: break
 
         neighbor = best_combination.copy()
         item_to_modify = random.choice(current_items)
+
         change = random.choice([-0.50, 0.50, -1.00, 1.00])
-        
         neighbor[item_to_modify] = round_to_50_or_00(neighbor[item_to_modify] + change)
         neighbor[item_to_modify] = max(0.50, neighbor[item_to_modify])
+
         neighbor_value = calculate_combination_value(neighbor, item_prices)
         neighbor_diff = abs(target_value - neighbor_value) + (10000 if neighbor_value > target_value else 0)
 
@@ -101,7 +85,7 @@ def local_search_optimization(item_prices, target_value, combination_size, max_i
     return best_combination
 
 def format_currency(value):
-    """Formata um número como moeda brasileira."""
+    """Formats a number as Brazilian Real currency."""
     if pd.isna(value):
         return "R$ -"
     try:
@@ -109,8 +93,8 @@ def format_currency(value):
     except (ValueError, TypeError):
         return "R$ Inválido"
 
+# Função para carregar os dados de recebimento do CSV
 def load_receipts_data():
-    """Carrega os dados de recebimento do CSV."""
     if os.path.exists(CSV_FILE_RECEBIMENTOS):
         try:
             df = pd.read_csv(CSV_FILE_RECEBIMENTOS)
@@ -123,10 +107,11 @@ def load_receipts_data():
         except Exception as e:
             st.error(f"Erro ao carregar CSV de recebimentos: {e}")
             return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
-    return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
+    else:
+        return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
 
+# Função para salvar os dados de recebimento no CSV
 def save_receipts_data(df):
-    """Salva os dados de recebimento no CSV."""
     try:
         df['Data'] = df['Data'].dt.strftime('%Y-%m-%d')
         df.to_csv(CSV_FILE_RECEBIMENTOS, index=False)
@@ -134,37 +119,39 @@ def save_receipts_data(df):
     except Exception as e:
         st.error(f"Erro ao salvar dados de recebimento: {e}")
 
-def plot_daily_receipts(df, date_column, value_column, title):
-    """Plota gráfico de recebimentos diários."""
-    if df.empty:
-        st.info("Nenhum dado para exibir no gráfico.")
-        return
-        
-    chart = alt.Chart(df).mark_bar().encode(
-        x=alt.X(date_column, axis=alt.Axis(title='Data')),
-        y=alt.Y(value_column, axis=alt.Axis(title='Valor (R$)')),
-        tooltip=[date_column, value_column]
-    ).properties(title=title)
-    
-    st.altair_chart(chart, use_container_width=True)
-
-def display_receipts_table(df):
-    """Exibe tabela de recebimentos."""
-    if df.empty:
-        st.info("Nenhum dado de recebimento cadastrado.")
-        return
-        
-    st.dataframe(df, use_container_width=True)
-
-# Inicialização do estado da sessão
+# Inicialização do estado da sessão (garantindo que 'df_receipts' sempre exista)
 if 'df_receipts' not in st.session_state:
     st.session_state['df_receipts'] = load_receipts_data()
+    st.info("✅ 'df_receipts' foi inicializado (carregando do arquivo).")
+else:
+    st.info("✅ 'df_receipts' já existia na sessão.")
+
+# ----- Funções para visualização -----
+def plot_daily_receipts(df, date_column, value_column, title):
+    if not df.empty:
+        chart = alt.Chart(df).mark_bar().encode(
+            x=alt.X(date_column, axis=alt.Axis(title='Data')),
+            y=alt.Y(value_column, axis=alt.Axis(title='Valor (R$)')),
+            tooltip=[date_column, value_column]
+        ).properties(
+            title=title
+        )
+        st.altair_chart(chart, use_container_width=True)
+    else:
+        st.info("Nenhum dado para exibir no gráfico.")
+
+def display_receipts_table(df):
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("Nenhum dado de recebimento cadastrado.")
 
 # ----- Interface Streamlit -----
+
 # Colunas para Título e Logo
 col_title1, col_title2 = st.columns([0.30, 0.70])
 with col_title1:
-    st.image("logo.png", width=1000)
+    st.image("logo.png", width=1000)  # Usa a imagem local logo.png
 with col_title2:
     st.title("Sistema de Gestão")
     st.markdown("**Clip's Burger**")
@@ -181,7 +168,7 @@ e tenta encontrar combinações *hipotéticas* de produtos que poderiam correspo
 """)
 st.divider()
 
-# --- Sidebar ---
+# --- Configuration Sidebar ---
 with st.sidebar:
     st.header("⚙️ Configurações")
     drink_percentage = st.slider(
@@ -213,6 +200,8 @@ tab1, tab2, tab3 = st.tabs(["📈 Resumo das Vendas", "🧩 Detalhes das Combina
 with tab1:
     st.header("📈 Resumo das Vendas")
     arquivo = st.file_uploader("📤 Envie o arquivo de transações (.csv ou .xlsx)", type=["csv", "xlsx"])
+
+    # Inicialize 'vendas' com um dicionário vazio
     vendas = {}
 
     if arquivo:
@@ -223,38 +212,38 @@ with tab1:
                         df = pd.read_csv(arquivo, sep=';', encoding='utf-8', dtype=str)
                     except Exception:
                         arquivo.seek(0)
-                        df = pd.read_csv(arquivo, sep=',', encoding='utf-8', dtype=str)
+                        try:
+                            df = pd.read_csv(arquivo, sep=',', encoding='utf-8', dtype=str)
+                        except Exception as e:
+                            st.error(f"Não foi possível ler o CSV. Erro: {e}")
+                            st.stop()
                 else:
                     df = pd.read_excel(arquivo, dtype=str)
 
                 st.success(f"Arquivo '{arquivo.name}' carregado com sucesso!")
 
-                # Validação das colunas necessárias
+                # Processamento dos dados
                 required_columns = ['Tipo', 'Bandeira', 'Valor']
                 if not all(col in df.columns for col in required_columns):
                     st.error(f"Erro: O arquivo precisa conter as colunas: {', '.join(required_columns)}")
                     st.stop()
 
-                # Processamento dos dados
                 df_processed = df.copy()
                 df_processed['Tipo'] = df_processed['Tipo'].str.lower().str.strip().fillna('desconhecido')
                 df_processed['Bandeira'] = df_processed['Bandeira'].str.lower().str.strip().fillna('desconhecida')
-                
-                # Conversão de valores
                 df_processed['Valor_Numeric'] = pd.to_numeric(
                     df_processed['Valor'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False),
                     errors='coerce'
                 )
                 df_processed.dropna(subset=['Valor_Numeric'], inplace=True)
 
-                # Tratamento de datas
+                # Adicionando coluna de data se existir no arquivo
                 if 'Data' in df_processed.columns:
                     try:
                         df_processed['Data'] = pd.to_datetime(df_processed['Data'])
-                    except Exception:
+                    except:
                         st.warning("Não foi possível converter a coluna 'Data' para formato de data")
 
-                # Mapeamento de categorias
                 df_processed['Categoria'] = df_processed['Tipo'] + ' ' + df_processed['Bandeira']
                 categorias_desejadas = {
                     'crédito à vista elo': 'Crédito Elo',
@@ -297,7 +286,7 @@ with tab1:
                     X Filé Bacon R$ 33,00
                     X Filé Tudo R$ 36,00
                     Cebola R$ 0.50
-                """
+                    """
                 dados_bebidas = """
                     Suco R$ 10,00
                     Creme R$ 15,00
@@ -308,7 +297,7 @@ with tab1:
                     Refri 2L R$ 15,00
                     Água R$ 3,00
                     Água com Gas R$ 4,00
-                """
+                    """
                 sanduiches_precos = parse_menu_string(dados_sanduiches)
                 bebidas_precos = parse_menu_string(dados_bebidas)
 
@@ -328,30 +317,24 @@ with tab1:
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
                 total_vendas = sum(vendas.values())
                 st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
-                st.caption("Este é o valor total das suas vendas.")
 
-                imposto_simples = total_vendas * ALIQUOTA_SIMPLES
-                st.metric(f"📊 Simples Nacional ({ALIQUOTA_SIMPLES*100:.0f}%)", format_currency(imposto_simples))
-                st.caption(f"Calculado como {format_currency(total_vendas)} (Faturamento Bruto) x {ALIQUOTA_SIMPLES*100:.0f}%.")
+                aliquota_simples = 0.06
+                imposto_simples = total_vendas * aliquota_simples
+                st.metric("📊 Simples Nacional (6%)", format_currency(imposto_simples))
 
-                fgts = SALARIO_MINIMO * 0.08
-                ferias_mais_terco = SALARIO_MINIMO / 12 + (SALARIO_MINIMO / 12) / 3
-                decimo_terceiro = SALARIO_MINIMO / 12
-                custo_funcionario = SALARIO_MINIMO + fgts + ferias_mais_terco + decimo_terceiro
-                
-                st.metric("👷‍♂️ Custo Mensal com Funcionário CLT (Estimado)", format_currency(custo_funcionario))
-                st.caption(f"Inclui Salário Mínimo ({format_currency(SALARIO_MINIMO)}), FGTS ({format_currency(fgts)}), 1/12 de Férias + 1/3 ({format_currency(ferias_mais_terco):.2f}) e 1/12 de 13º ({format_currency(decimo_terceiro):.2f}).")
+                salario_minimo = 1412.00
+                fgts = salario_minimo * 0.08
+                ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) / 3
+                decimo_terceiro = salario_minimo / 12
 
-                st.metric("👩‍💼 Custo Mensal com Contadora", format_currency(CUSTO_CONTADORA))
-                st.caption(f"Valor fixo mensal de {format_currency(CUSTO_CONTADORA)}.")
+                custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
+                st.metric("👷‍♂️ Custo Mensal com Funcionário CLT", format_currency(custo_funcionario))
 
-                total_custos = imposto_simples + custo_funcionario + CUSTO_CONTADORA
-                st.metric("💸 Total de Custos (Estimado)", format_currency(total_custos))
-                st.caption(f"Soma de Simples Nacional, Custo com Funcionário e Custo com Contadora.")
-                
+                total_custos = imposto_simples + custo_funcionario
                 lucro_estimado = total_vendas - total_custos
+
+                st.metric("💸 Total de Custos", format_currency(total_custos))
                 st.metric("📈 Lucro Estimado (após custos)", format_currency(lucro_estimado))
-                st.caption(f"Calculado como {format_currency(total_vendas)} (Faturamento Bruto) - {format_currency(total_custos)} (Total de Custos).")
 
             except Exception as e:
                 st.error(f"Erro no processamento do arquivo: {str(e)}")
@@ -363,54 +346,11 @@ with tab2:
     st.header("🧩 Detalhes das Combinações Geradas")
     st.caption(f"Alocação: {drink_percentage}% bebidas | {sandwich_percentage}% sanduíches")
 
-    if not vendas:
-        st.info("Nenhum dado de vendas disponível para gerar combinações.")
-        st.stop()
-
-    # Definição dos cardápios (repetido para garantir disponibilidade)
-    dados_sanduiches = """
-        X Salada Simples R$ 18,00
-        X Salada Especial R$ 20,00
-        X Especial Duplo R$ 24,00
-        X Bacon Simples R$ 22,00
-        X Bacon Especial R$ 24,00
-        X Bacon Duplo R$ 28,00
-        X Hamburgão R$ 35,00
-        X Mata-Fome R$ 39,00
-        X Frango Simples R$ 22,00
-        X Frango Especial R$ 24,00
-        X Frango Bacon R$ 27,00
-        X Frango Tudo R$ 30,00
-        X Lombo Simples R$ 23,00
-        X Lombo Especial R$ 25,00
-        X Lombo Bacon R$ 28,00
-        X Lombo Tudo R$ 31,00
-        X Filé Simples R$ 28,00
-        X Filé Especial R$ 30,00
-        X Filé Bacon R$ 33,00
-        X Filé Tudo R$ 36,00
-        Cebola R$ 0.50
-    """
-    dados_bebidas = """
-        Suco R$ 10,00
-        Creme R$ 15,00
-        Refri caçula R$ 3.50
-        Refri Lata R$ 7,00
-        Refri 600 R$ 8,00
-        Refri 1L R$ 10,00
-        Refri 2L R$ 15,00
-        Água R$ 3,00
-        Água com Gas R$ 4,00
-    """
-    sanduiches_precos = parse_menu_string(dados_sanduiches)
-    bebidas_precos = parse_menu_string(dados_bebidas)
-
     ordem_formas = [
         'Débito Visa', 'Débito MasterCard', 'Débito Elo',
         'Crédito Visa', 'Crédito MasterCard', 'Crédito Elo', 'PIX'
     ]
     vendas_ordenadas = {forma: vendas.get(forma, 0) for forma in ordem_formas}
-    
     for forma, total in vendas.items():
         if forma not in vendas_ordenadas:
             vendas_ordenadas[forma] = total
@@ -495,25 +435,19 @@ with tab2:
                     delta_color="normal" if diff <= 0 else "inverse"
                 )
 
-# --- Tab 3: Cadastro de Recebimentos ---
 with tab3:
     st.subheader("💰 Cadastro de Recebimentos Diários")
 
     with st.form("daily_receipt_form"):
         data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
         col1, col2, col3 = st.columns(3)
-        dinheiro = col1.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f")
-        cartao = col2.number_input("Cartão (R$)", min_value=0.0, step=0.50, format="%.2f")
-        pix = col3.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f")
+        dinheiro = col1.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
+        cartao = col2.number_input("Cartão (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
+        pix = col3.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f", label_visibility="visible")
         submitted = st.form_submit_button("Adicionar Recebimento")
 
         if submitted:
-            new_receipt = pd.DataFrame([{
-                'Data': pd.to_datetime(data_hoje), 
-                'Dinheiro': dinheiro, 
-                'Cartao': cartao, 
-                'Pix': pix
-            }])
+            new_receipt = pd.DataFrame([{'Data': pd.to_datetime(data_hoje), 'Dinheiro': dinheiro, 'Cartao': cartao, 'Pix': pix}])
             st.session_state['df_receipts'] = pd.concat([st.session_state['df_receipts'], new_receipt], ignore_index=True)
             save_receipts_data(st.session_state['df_receipts'])
             st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
@@ -521,10 +455,9 @@ with tab3:
 
     st.subheader("Visualização dos Recebimentos")
 
+    print(f"Verificando 'df_receipts' antes da condição: {'df_receipts' in st.session_state}")
     if not st.session_state['df_receipts'].empty:
         df_receipts = st.session_state['df_receipts'].copy()
-        
-        # Conversão de data
         if not pd.api.types.is_datetime64_any_dtype(df_receipts['Data']):
             try:
                 df_receipts['Data'] = pd.to_datetime(df_receipts['Data'])
@@ -532,22 +465,18 @@ with tab3:
                 st.error(f"Erro ao converter a coluna 'Data': {e}")
                 st.stop()
 
-        # Cálculos e preparação de dados
         df_receipts['Total'] = df_receipts['Dinheiro'] + df_receipts['Cartao'] + df_receipts['Pix']
         df_receipts['Ano'] = df_receipts['Data'].dt.year
         df_receipts['Mes'] = df_receipts['Data'].dt.month
         df_receipts['Dia'] = df_receipts['Data'].dt.day
 
-        # --- Seleção de período ---
+        # --- Nova seção para seleção de período ---
         st.subheader("📊 Vendas por Período")
         col_inicio, col_fim = st.columns(2)
         data_inicial = col_inicio.date_input("Data Inicial", df_receipts['Data'].min().date())
         data_final = col_fim.date_input("Data Final", df_receipts['Data'].max().date())
 
-        df_periodo = df_receipts[
-            (df_receipts['Data'].dt.date >= data_inicial) & 
-            (df_receipts['Data'].dt.date <= data_final)
-        ].copy()
+        df_periodo = df_receipts[(df_receipts['Data'].dt.date >= data_inicial) & (df_receipts['Data'].dt.date <= data_final)].copy()
 
         if not df_periodo.empty:
             df_periodo_agrupado = df_periodo.groupby(df_periodo['Data'].dt.date)['Total'].sum().reset_index()
@@ -560,39 +489,31 @@ with tab3:
             ).properties(
                 title=f"Total de Vendas de {data_inicial.strftime('%d/%m/%Y')} a {data_final.strftime('%d/%m/%Y')}"
             ).interactive()
-            
             st.altair_chart(chart_periodo, use_container_width=True)
         else:
             st.info("Nenhum recebimento encontrado no período selecionado.")
 
         st.divider()
 
-        # --- Visualização por Ano, Mês e Dia ---
         st.subheader("Visualização por Ano, Mês e Dia")
+
         anos_disponiveis = sorted(df_receipts['Ano'].unique(), reverse=True)
         ano_selecionado = st.selectbox("Selecionar Ano", anos_disponiveis, index=0)
         df_ano = df_receipts[df_receipts['Ano'] == ano_selecionado]
 
         meses_disponiveis = sorted(df_ano['Mes'].unique())
-        # Dicionário de nomes dos meses
-        nomes_meses = {
-        1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
-        }
-
-        # Filtrar meses válidos
-        meses_disponiveis = sorted([m for m in df_ano['Mes'].unique() if 1 <= m <= 12])
-
-        # Formatar meses disponíveis
-        meses_nomes_disponiveis = [f"{m} - {nomes_meses.get(m, 'Inválido')}" for m in meses_disponiveis]
-
-        # Validar se há meses disponíveis
-        if not meses_nomes_disponiveis:
-        st.warning("Nenhum mês válido encontrado nos dados.")
+        nomes_meses = {1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun', 7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'}
+        meses_nomes_disponiveis = [f"{m} - {nomes_meses[m]}" for m in meses_disponiveis]
+        mes_selecionado_index = 0
+        if meses_nomes_disponiveis:
+            mes_selecionado_str = st.selectbox("Selecionar Mês", meses_nomes_disponiveis, index=0)
+            mes_selecionado = int(mes_selecionado_str.split(' - ')[0])
+            df_mes = df_ano[df_ano['Mes'] == mes_selecionado]
+        else:
+            df_mes = df_ano.copy()
 
         dias_disponiveis = sorted(df_mes['Dia'].unique())
         dia_selecionado = st.selectbox("Selecionar Dia", ['Todos'] + list(dias_disponiveis), index=0)
-        
         if dia_selecionado != 'Todos':
             df_dia = df_mes[df_mes['Dia'] == dia_selecionado]
         else:
@@ -614,10 +535,8 @@ with tab3:
 
         st.divider()
 
-        # Gráficos de detalhes
         st.subheader("Totais Diários")
         df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
-        
         plot_diario = alt.Chart(df_dia).mark_bar().encode(
             x=alt.X('Data_Formatada:N', axis=alt.Axis(title='Data')),
             y=alt.Y('Total:Q', axis=alt.Axis(title='Valor (R$)')),
@@ -625,18 +544,11 @@ with tab3:
         ).properties(
             title=f"Total Recebido em {dia_selecionado if dia_selecionado != 'Todos' else 'Todos os Dias'} de {nomes_meses.get(mes_selecionado, '') if meses_nomes_disponiveis else 'Todos os Meses'} de {ano_selecionado}"
         ).interactive()
-        
         st.altair_chart(plot_diario, use_container_width=True)
 
         st.subheader("Gráfico de Formas de Pagamento")
-        df_melted = df_dia.melt(
-            id_vars=['Data'], 
-            value_vars=['Dinheiro', 'Cartao', 'Pix'], 
-            var_name='Forma', 
-            value_name='Valor'
-        )
+        df_melted = df_dia.melt(id_vars=['Data'], value_vars=['Dinheiro', 'Cartao', 'Pix'], var_name='Forma', value_name='Valor')
         df_melted['Data_Formatada'] = df_melted['Data'].dt.strftime('%d/%m/%Y')
-        
         chart_pagamentos = alt.Chart(df_melted).mark_bar().encode(
             x=alt.X('Data_Formatada:N', axis=alt.Axis(title='Data')),
             y=alt.Y('Valor:Q', axis=alt.Axis(title='Valor (R$)')),
@@ -644,16 +556,13 @@ with tab3:
             tooltip=['Data_Formatada', 'Forma', 'Valor']
         ).properties(
             title=f"Recebimentos por Forma de Pagamento em {dia_selecionado if dia_selecionado != 'Todos' else 'Todos os Dias'} de {nomes_meses.get(mes_selecionado, '') if meses_nomes_disponiveis else 'Todos os Meses'} de {ano_selecionado}"
-        ).interactive()
-        
+        ).interactive() # Tornar o gráfico interativo
         st.altair_chart(chart_pagamentos, use_container_width=True)
 
         st.subheader("Detalhes dos Recebimentos")
         df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
-        display_receipts_table(
-            df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']]
-            .rename(columns={'Data_Formatada': 'Data'})
-        )
+        display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].rename(columns={'Data_Formatada': 'Data'}))
+
     else:
         st.info("Nenhum recebimento cadastrado ainda.")
 
