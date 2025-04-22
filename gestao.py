@@ -283,12 +283,28 @@ Cerveja R$ 12,00"""
                     st.stop()
 
                 # Gráfico de vendas
+                # Gráfico de vendas
                 st.subheader("Vendas por Forma de Pagamento")
                 if vendas:
                     df_vendas = pd.DataFrame(list(vendas.items()), columns=['Forma de Pagamento', 'Valor Total'])
-                    df_vendas['Valor Formatado'] = df_vendas['Valor Total'].apply(format_currency)
-                    st.bar_chart(df_vendas.set_index('Forma de Pagamento')['Valor Total'])
-                    st.dataframe(df_vendas[['Forma de Pagamento', 'Valor Formatado']], use_container_width=True)
+                    
+                    # Gráfico de barras com Altair para melhor controle
+                    chart = alt.Chart(df_vendas).mark_bar().encode(
+                        x=alt.X('Forma de Pagamento:N', title=None, axis=alt.Axis(labels=True, ticks=False)),
+                        y=alt.Y('Valor Total:Q', title=None),
+                        color=alt.Color('Forma de Pagamento:N', legend=alt.Legend(title="Formas de Pagamento")),
+                        tooltip=['Forma de Pagamento', 'Valor Total']
+                    ).properties(
+                        height=400
+                    ).configure_legend(
+                        orient='bottom',
+                        titleFontSize=14,
+                        labelFontSize=12
+                    )
+                    
+                    st.altair_chart(chart, use_container_width=True)
+                else:
+                    st.info("Nenhum dado de vendas disponível")
 
                 # --- Cálculo dos impostos e custos fixos ---
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
