@@ -305,38 +305,36 @@ with tab1:
 
                 # Gráfico de vendas por forma de pagamento
                 st.subheader("Vendas por Forma de Pagamento")
-                if vendas:  # Verificação correta para dicionário vazio
+                if vendas:
                     df_vendas = pd.DataFrame(list(vendas.items()), columns=['Forma de Pagamento', 'Valor Total'])
                     df_vendas['Valor Formatado'] = df_vendas['Valor Total'].apply(format_currency)
                     st.bar_chart(df_vendas.set_index('Forma de Pagamento')['Valor Total'])
                     st.dataframe(df_vendas[['Forma de Pagamento', 'Valor Formatado']], use_container_width=True)
 
-                # ---- Cálculo dos impostos e custos fixos ----
+    # ---- Cálculo dos impostos e custos fixos ----
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
-                # Total bruto de vendas
-                total_vendas = sum(vendas.values())
-                st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
+                    total_vendas = sum(vendas.values())
+                    st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
 
-                # Simples Nacional - Alíquota presumida 6%
-                aliquota_simples = 0.06
-                imposto_simples = total_vendas * aliquota_simples
+                    aliquota_simples = 0.06
+                    imposto_simples = total_vendas * aliquota_simples
                 st.metric("📊 Simples Nacional (6%)", format_currency(imposto_simples))
 
-                # Custo fixo com funcionário (base: 1 salário mínimo)
-                salario_minimo = 1412.00
-                fgts = salario_minimo * 0.08
-                ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) / 3
-                decimo_terceiro = salario_minimo / 12
+                    salario_minimo = 1412.00
+                    fgts = salario_minimo * 0.08
+                    ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) / 3
+                    decimo_terceiro = salario_minimo / 12
 
-                custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
-                st.metric("👷‍♂️ Custo Mensal com Funcionário CLT", format_currency(custo_funcionario))
+                    custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
+                    st.metric("👷‍♂️ Custo Mensal com Funcionário CLT", format_currency(custo_funcionario))
 
-                # Total de custos
-                total_custos = imposto_simples + custo_funcionario
-                lucro_estimado = total_vendas - total_custos
+                    total_custos = imposto_simples + custo_funcionario
+                    lucro_estimado = total_vendas - total_custos
 
                 st.metric("💸 Total de Custos", format_currency(total_custos))
                 st.metric("📈 Lucro Estimado (após custos)", format_currency(lucro_estimado))
+else:
+    st.warning("Nenhum dado de venda para exibir.")
                 else:
                     st.warning("Nenhum dado de venda para exibir.")
 
