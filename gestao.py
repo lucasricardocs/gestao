@@ -577,3 +577,6 @@ with tab3:
         display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].renamecolumns={'Data_Formatada': 'Data', 'Dinheiro': 'Dinheiro (R$)', 'Cartao': 'Cartão (R$)', 'Pix': 'Pix (R$)', 'Total': 'Total (R$)'}))
     else:
         st.info("Nenhum dado de recebimento cadastrado.")
+
+if __name__ == '__main__':
+    pass
