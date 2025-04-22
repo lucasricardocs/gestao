@@ -375,39 +375,35 @@ Cerveja R$ 12,00"""
                         st.metric("💸 Total de Custos", format_currency(total_custos))
                         st.metric("📈 Lucro Estimado", format_currency(lucro_estimado))
                     
-                    # Expanders organizados
-                    with st.expander("📘 Detalhes dos cálculos"):
-                        tab1, tab2, tab3 = st.tabs(["Simples Nacional", "Custo Funcionário", "Lucro Estimado"])
-                        
-                        with tab1:
-                            st.markdown(f"""
-                            - Alíquota aplicada: **6%**
-                            - Fórmula: `faturamento_bruto × 6%`
-                            - Exemplo: `{format_currency(total_vendas)} × 0.06 = {format_currency(imposto_simples)}`
-                            """)
-                            
-                        with tab2:
-                            st.markdown(f"""
-                            - **Salário Mínimo**: {format_currency(salario_minimo)}
-                            - **FGTS (8%)**: {format_currency(fgts)}
-                            - **Férias + 1/3 constitucional**: {format_currency(ferias_mais_terco)}
-                            - **13º proporcional**: {format_currency(decimo_terceiro)}
-                            - **Total**: {format_currency(custo_funcionario)}
-                            """)
-                            
-                        with tab3:
-                            st.markdown(f"""
-                            - Fórmula: `faturamento - (impostos + funcionário + contadora)`
-                            - Cálculo:
-                            ```
-                            {format_currency(total_vendas)} - ({format_currency(imposto_simples)} + {format_currency(custo_funcionario)} + {format_currency(custo_contadora)})
-                            = {format_currency(lucro_estimado)}
-                            ```
-                            """)
+                    # Expanders originais (sem tabs)
+                    with st.expander("📘 Como é calculado o Simples Nacional?"):
+                        st.markdown(f"""
+                        - Alíquota aplicada: **6%**
+                        - Fórmula: `faturamento_bruto × 6%`
+                        - Exemplo: `{format_currency(total_vendas)} × 0.06 = {format_currency(imposto_simples)}`
+                        """)
                     
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                
+                    with st.expander("📘 Como é calculado o custo com funcionário?"):
+                        st.markdown(f"""
+                        - **Salário Mínimo**: {format_currency(salario_minimo)}
+                        - **FGTS (8%)**: {format_currency(fgts)}
+                        - **Férias + 1/3 constitucional**: {format_currency(ferias_mais_terco)}
+                        - **13º proporcional**: {format_currency(decimo_terceiro)}
+                        - **Total**: {format_currency(custo_funcionario)}
+                        """)
+                    
+                    with st.expander("📘 Como é calculado o lucro estimado?"):
+                        st.markdown(f"""
+                        - Fórmula: `faturamento - (impostos + funcionário + contadora)`
+                        - Cálculo:
+                        ```
+                        {format_currency(total_vendas)} - ({format_currency(imposto_simples)} + {format_currency(custo_funcionario)} + {format_currency(custo_contadora)})
+                        = {format_currency(lucro_estimado)}
+                        ```
+                        """)
+                    
+                    st.markdown('</div>', unsafe_allow_html=True)                
+                                
 # --- Tab 2: Detalhes das Combinações ---
 with tab2:
     st.header("🧩 Detalhes das Combinações Geradas")
