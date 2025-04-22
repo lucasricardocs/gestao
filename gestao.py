@@ -6,7 +6,7 @@ import random
 import os
 
 # --- CONFIGURAÇÃO DA PÁGINA (DEVE SER A PRIMEIRA CHAMADA STREAMLIT) ---
-st.set_page_config(page_title="Sistema de Gestao - Clips Burger", layout="centered", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Gestão - Clips Burger", layout="centered", initial_sidebar_state="expanded")
 
 # Nome do arquivo CSV para armazenar os dados de recebimento
 CSV_FILE_RECEBIMENTOS = 'recebimentos.csv'
@@ -155,6 +155,7 @@ with col_title1:
         st.warning("Logo não encontrada")
 with col_title2:
     st.title("Sistema de Gestão")
+    st.title("**Clip's Burger**")
     st.markdown("**Clip's Burger**")
 
 st.markdown("""
