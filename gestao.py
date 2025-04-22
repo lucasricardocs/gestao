@@ -306,6 +306,7 @@ Cerveja R$ 12,00"""
                     st.altair_chart(chart, use_container_width=True)
                 else:
                     st.info("Nenhum dado de vendas disponível")
+                    st.divider()
 
                 # --- Cálculo dos impostos e custos fixos ---
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
