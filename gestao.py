@@ -338,10 +338,10 @@ with tab1:
                 st.caption(f"Valor fixo mensal de {format_currency(custo_contadora)}.")
 
                 total_custos = imposto_simples + custo_funcionario + custo_contadora
-                lucro_estimado = total_vendas - total_custos
-
                 st.metric("💸 Total de Custos (Estimado)", format_currency(total_custos))
                 st.caption(f"Soma de Simples Nacional, Custo com Funcionário e Custo com Contadora.")
+                lucro_estimado = total_vendas - total_custos
+
                 st.metric("📈 Lucro Estimado (após custos)", format_currency(lucro_estimado))
                 st.caption(f"Calculado como {format_currency(total_vendas)} (Faturamento Bruto) - {format_currency(total_custos)} (Total de Custos).")
 
