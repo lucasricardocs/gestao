@@ -155,9 +155,8 @@ with col_title1:
         st.warning("Logo não encontrada")
 with col_title2:
     st.title("Sistema de Gestão")
-st.markdown("<p style='font-weight:bold; font-size:20px; margin-top:-15px'>Clip's Burger</p>", 
-           unsafe_allow_html=True)
-    st.markdown("**Clip's Burger**")
+    st.markdown("<p style='font-weight:bold; font-size:20px; margin-top:-15px'>Clip's Burger</p>", unsafe_allow_html=True)
+    #st.markdown("**Clip's Burger**")
 
 st.markdown("""
 Bem-vindo(a)! Esta ferramenta ajuda a visualizar suas vendas por forma de pagamento
