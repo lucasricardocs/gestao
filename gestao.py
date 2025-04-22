@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # --- CONSTANTES ---
-CSV_FILE_VENDAS = 'vendas.csv'  # Alterado de recebimentos.csv para vendas.csv
+CSV_FILE_RECEBIMENTOS = 'recebimentos.csv'
 DADOS_SANDUICHES = """X Salada Simples R$ 18,00
 X Bacon R$ 22,00
 X Tudo R$ 25,00
@@ -105,32 +105,32 @@ def format_currency(value):
         return "R$ Inválido"
 
 def load_receipts_data():
-    """Carrega os dados de vendas do arquivo CSV."""
-    if os.path.exists(CSV_FILE_VENDAS):  # Alterado para CSV_FILE_VENDAS
+    """Carrega os dados de recebimento do arquivo CSV."""
+    if os.path.exists(CSV_FILE_RECEBIMENTOS):
         try:
-            df = pd.read_csv(CSV_FILE_VENDAS, encoding='utf-8')
+            df = pd.read_csv(CSV_FILE_RECEBIMENTOS, encoding='utf-8')
             if 'Data' in df.columns:
                 try:
                     df['Data'] = pd.to_datetime(df['Data'])
                 except Exception as e:
-                    st.warning(f"Aviso: Erro ao converter 'Data' do CSV de vendas: {e}")
+                    st.warning(f"Aviso: Erro ao converter 'Data' do CSV de recebimentos: {e}")
             return df
         except Exception as e:
-            st.error(f"Erro ao carregar CSV de vendas: {e}")
+            st.error(f"Erro ao carregar CSV de recebimentos: {e}")
             return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
     else:
         return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
 
 def save_receipts_data(df):
-    """Salva os dados de vendas no arquivo CSV."""
+    """Salva os dados de recebimento no arquivo CSV."""
     try:
         if 'Data' in df.columns:
             df['Data'] = df['Data'].dt.strftime('%Y-%m-%d')
-        df.to_csv(CSV_FILE_VENDAS, index=False, encoding='utf-8')  # Alterado para CSV_FILE_VENDAS
-        st.success(f"Dados de vendas salvos em '{CSV_FILE_VENDAS}'!")
+        df.to_csv(CSV_FILE_RECEBIMENTOS, index=False, encoding='utf-8')
+        st.success(f"Dados de recebimento salvos em '{CSV_FILE_RECEBIMENTOS}'!")
     except Exception as e:
-        st.error(f"Erro ao salvar dados de vendas: {e}")
-        
+        st.error(f"Erro ao salvar dados de recebimento: {e}")
+
 def plot_payment_distribution(df):
     """Gera gráfico de pizza mostrando a distribuição por forma de pagamento."""
     if not df.empty:
@@ -142,7 +142,7 @@ def plot_payment_distribution(df):
             color=alt.Color(field="Forma de Pagamento", type="nominal"),
             tooltip=["Forma de Pagamento", "Valor"]
         ).properties(
-            title="Distribuição de Vendas por Forma de Pagamento"
+            title="Distribuição de Recebimentos por Forma de Pagamento"
         )
         st.altair_chart(pie_chart, use_container_width=True)
 
@@ -157,7 +157,7 @@ def plot_daily_totals(df):
             y=alt.Y('Total:Q', axis=alt.Axis(title='Valor (R$)')),
             tooltip=['Data_Formatada', 'Total']
         ).properties(
-            title="Totais Diários de Vendas"
+            title="Totais Diários de Recebimento"
         )
         st.altair_chart(chart, use_container_width=True)
 
@@ -235,7 +235,7 @@ e tenta encontrar combinações *hipotéticas* de produtos que poderiam correspo
 st.divider()
 
 # --- ABAS PRINCIPAIS ---
-tab1, tab2, tab3 = st.tabs(["📈 Resumo das Vendas", "🧩 Detalhes das Combinações", "💰 Cadastro de Vendas"])
+tab1, tab2, tab3 = st.tabs(["📈 Resumo das Vendas", "🧩 Detalhes das Combinações", "💰 Cadastro de Recebimentos"])
 
 # --- TAB 1: RESUMO DAS VENDAS ---
 with tab1:
