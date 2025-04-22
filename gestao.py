@@ -317,10 +317,12 @@ with tab1:
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
                 total_vendas = sum(vendas.values())
                 st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
+                st.caption("Este é o valor total das suas vendas.")
 
                 aliquota_simples = 0.06
                 imposto_simples = total_vendas * aliquota_simples
-                st.metric("📊 Simples Nacional (6%)", format_currency(imposto_simples))
+                st.metric(f"📊 Simples Nacional ({aliquota_simples*100:.0f}%)", format_currency(imposto_simples))
+                st.caption(f"Calculado como {format_currency(total_vendas)} (Faturamento Bruto) x {aliquota_simples*100:.0f}%.")
 
                 salario_minimo = 1412.00
                 fgts = salario_minimo * 0.08
@@ -328,13 +330,20 @@ with tab1:
                 decimo_terceiro = salario_minimo / 12
 
                 custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
-                st.metric("👷‍♂️ Custo Mensal com Funcionário CLT", format_currency(custo_funcionario))
+                st.metric("👷‍♂️ Custo Mensal com Funcionário CLT (Estimado)", format_currency(custo_funcionario))
+                st.caption(f"Inclui Salário Mínimo ({format_currency(salario_minimo)}), FGTS ({format_currency(fgts)}), 1/12 de Férias + 1/3 ({format_currency(ferias_mais_terco):.2f}) e 1/12 de 13º ({format_currency(decimo_terceiro):.2f}).")
 
-                total_custos = imposto_simples + custo_funcionario
+                custo_contadora = 316.00
+                st.metric("👩‍💼 Custo Mensal com Contadora", format_currency(custo_contadora))
+                st.caption(f"Valor fixo mensal de {format_currency(custo_contadora)}.")
+
+                total_custos = imposto_simples + custo_funcionario + custo_contadora
                 lucro_estimado = total_vendas - total_custos
 
-                st.metric("💸 Total de Custos", format_currency(total_custos))
+                st.metric("💸 Total de Custos (Estimado)", format_currency(total_custos))
+                st.caption(f"Soma de Simples Nacional, Custo com Funcionário e Custo com Contadora.")
                 st.metric("📈 Lucro Estimado (após custos)", format_currency(lucro_estimado))
+                st.caption(f"Calculado como {format_currency(total_vendas)} (Faturamento Bruto) - {format_currency(total_custos)} (Total de Custos).")
 
             except Exception as e:
                 st.error(f"Erro no processamento do arquivo: {str(e)}")
