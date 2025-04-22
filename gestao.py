@@ -282,44 +282,32 @@ Cerveja R$ 12,00"""
                 if not sanduiches_precos or not bebidas_precos:
                     st.error("Erro ao carregar cardápios. Verifique os dados no código.")
                     st.stop()
-                    
+
                 # Gráfico de vendas
                 st.subheader("Vendas por Forma de Pagamento")
                 if vendas:
                     df_vendas = pd.DataFrame(list(vendas.items()), columns=['Forma de Pagamento', 'Valor Total'])
                     
-                    # Gráfico de vendas
-                    st.subheader("Vendas por Forma de Pagamento")
-                    if vendas:
-                        df_vendas = pd.DataFrame(list(vendas.items()), columns=['Forma de Pagamento', 'Valor Total'])
-                        
-                        chart = alt.Chart(df_vendas).mark_bar(size=30).encode(
-                            x=alt.X('Forma de Pagamento:N', 
-                                   axis=alt.Axis(labels=False, ticks=False, domain=False),
-                                   title=None),
-                            y=alt.Y('Valor Total:Q',
-                                   axis=None,
-                                   title=None),
-                            color=alt.Color('Forma de Pagamento:N', 
-                                          legend=alt.Legend(
-                                              title=None,
-                                              orient='bottom',
-                                              labelFontSize=12,
-                                              symbolSize=150,
-                                              padding=10
-                                          )),
-                            tooltip=['Forma de Pagamento', 'Valor Total']
-                        ).properties(
-                            height=350,
-                            padding={"bottom": 40}
-                        ).configure_view(
-                            strokeWidth=0
-                        )
-                        
-                        st.altair_chart(chart, use_container_width=True)
-                    else:
-                        st.info("Nenhum dado de vendas disponível")
+                    chart = alt.Chart(df_vendas).mark_bar().encode(
+                        x=alt.X('Forma de Pagamento:N', axis=alt.Axis(labels=False, title=None)),  # Remove rótulos e título do eixo X
+                        y=alt.Y('Valor Total:Q', title=None),  # Remove título do eixo Y
+                        color=alt.Color('Forma de Pagamento:N', legend=alt.Legend(
+                            title="Formas de Pagamento",
+                            orient='bottom',
+                            titleFontSize=14,
+                            labelFontSize=12
+                        )),
+                        tooltip=['Forma de Pagamento', 'Valor Total']
+                    ).properties(
+                        height=400
+                    ).configure_axis(
+                        grid=False  # Remove linhas de grade se desejar
+                    )
                     
+                    st.altair_chart(chart, use_container_width=True)
+                else:
+                    st.info("Nenhum dado de vendas disponível")
+                
                     # Divisor de página no final
                     st.divider()
                     
