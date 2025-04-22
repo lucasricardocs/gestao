@@ -119,13 +119,6 @@ def save_receipts_data(df):
     except Exception as e:
         st.error(f"Erro ao salvar dados de recebimento: {e}")
 
-# Inicialização do estado da sessão (garantindo que 'df_receipts' sempre exista)
-#if 'df_receipts' not in st.session_state:
- #   st.session_state['df_receipts'] = load_receipts_data()
-  #  st.info("✅ 'df_receipts' foi inicializado (carregando do arquivo).")
-#else:
- #   st.info("✅ 'df_receipts' já existia na sessão.")
-
 # ----- Funções para visualização -----
 def plot_daily_receipts(df, date_column, value_column, title):
     if not df.empty:
