@@ -11,6 +11,10 @@ st.set_page_config(page_title="Sistema de Gestao - Clips Burger", layout="center
 # Nome do arquivo CSV para armazenar os dados de recebimento
 CSV_FILE_RECEBIMENTOS = 'recebimentos.csv'
 
+# Inicialização do session_state
+if 'df_receipts' not in st.session_state:
+    st.session_state['df_receipts'] = pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
+
 # ----- Funções Auxiliares -----
 def parse_menu_string(menu_data_string):
     """Parses a multi-line string containing menu items and prices."""
@@ -97,7 +101,7 @@ def format_currency(value):
 def load_receipts_data():
     if os.path.exists(CSV_FILE_RECEBIMENTOS):
         try:
-            df = pd.read_csv(CSV_FILE_RECEBIMENTOS)
+            df = pd.read_csv(CSV_FILE_RECEBIMENTOS, encoding='utf-8')
             if 'Data' in df.columns:
                 try:
                     df['Data'] = pd.to_datetime(df['Data'])
@@ -113,8 +117,9 @@ def load_receipts_data():
 # Função para salvar os dados de recebimento no CSV
 def save_receipts_data(df):
     try:
-        df['Data'] = df['Data'].dt.strftime('%Y-%m-%d')
-        df.to_csv(CSV_FILE_RECEBIMENTOS, index=False)
+        if 'Data' in df.columns:
+            df['Data'] = df['Data'].dt.strftime('%Y-%m-%d')
+        df.to_csv(CSV_FILE_RECEBIMENTOS, index=False, encoding='utf-8')
         st.success(f"Dados de recebimento salvos em '{CSV_FILE_RECEBIMENTOS}'!")
     except Exception as e:
         st.error(f"Erro ao salvar dados de recebimento: {e}")
@@ -144,7 +149,10 @@ def display_receipts_table(df):
 # Colunas para Título e Logo
 col_title1, col_title2 = st.columns([0.30, 0.70])
 with col_title1:
-    st.image("logo.png", width=1000)  # Usa a imagem local logo.png
+    try:
+        st.image("logo.png", width=1000)  # Usa a imagem local logo.png
+    except FileNotFoundError:
+        st.warning("Logo não encontrada")
 with col_title2:
     st.title("Sistema de Gestão")
     st.markdown("**Clip's Burger**")
@@ -254,8 +262,18 @@ with tab1:
                 vendas = df_filtered.groupby('Forma Nomeada')['Valor_Numeric'].sum().to_dict()
 
                 # Cardápios
-                dados_sanduiches = """X Salada Simples R$ 18,00 ..."""  # Pode manter como estava
-                dados_bebidas = """Suco R$ 10,00 ..."""
+                dados_sanduiches = """X Salada Simples R$ 18,00
+X Bacon R$ 22,00
+X Tudo R$ 25,00
+X Frango R$ 20,00
+X Egg R$ 21,00
+Cebola R$ 5,00"""
+                
+                dados_bebidas = """Suco R$ 10,00
+Refrigerante R$ 8,00
+Água R$ 5,00
+Cerveja R$ 12,00"""
+                
                 sanduiches_precos = parse_menu_string(dados_sanduiches)
                 bebidas_precos = parse_menu_string(dados_bebidas)
 
@@ -328,7 +346,9 @@ with tab1:
             except Exception as e:
                 st.error(f"Erro no processamento do arquivo: {str(e)}")
     else:
-        st.info("✨ Aguardando o envio do arquivo de transações para iniciar a análise...")# --- Tab 2: Detalhes das Combinações ---
+        st.info("✨ Aguardando o envio do arquivo de transações para iniciar a análise...")
+
+# --- Tab 2: Detalhes das Combinações ---
 with tab2:
     st.header("🧩 Detalhes das Combinações Geradas")
     st.caption(f"Alocação: {drink_percentage}% bebidas | {sandwich_percentage}% sanduíches")
@@ -422,6 +442,7 @@ with tab2:
                     delta_color="normal" if diff <= 0 else "inverse"
                 )
 
+# --- Tab 3: Cadastro de Recebimentos ---
 with tab3:
     st.subheader("💰 Cadastro de Recebimentos Diários")
 
@@ -442,7 +463,6 @@ with tab3:
 
     st.subheader("Visualização dos Recebimentos")
 
-    print(f"Verificando 'df_receipts' antes da condição: {'df_receipts' in st.session_state}")
     if not st.session_state['df_receipts'].empty:
         df_receipts = st.session_state['df_receipts'].copy()
         if not pd.api.types.is_datetime64_any_dtype(df_receipts['Data']):
@@ -489,7 +509,8 @@ with tab3:
         df_ano = df_receipts[df_receipts['Ano'] == ano_selecionado]
 
         meses_disponiveis = sorted(df_ano['Mes'].unique())
-        nomes_meses = {1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun', 7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'}
+        nomes_meses = {1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun', 
+                       7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'}
         meses_nomes_disponiveis = [f"{m} - {nomes_meses[m]}" for m in meses_disponiveis]
         mes_selecionado_index = 0
         if meses_nomes_disponiveis:
@@ -543,7 +564,7 @@ with tab3:
             tooltip=['Data_Formatada', 'Forma', 'Valor']
         ).properties(
             title=f"Recebimentos por Forma de Pagamento em {dia_selecionado if dia_selecionado != 'Todos' else 'Todos os Dias'} de {nomes_meses.get(mes_selecionado, '') if meses_nomes_disponiveis else 'Todos os Meses'} de {ano_selecionado}"
-        ).interactive() # Tornar o gráfico interativo
+        ).interactive()
         st.altair_chart(chart_pagamentos, use_container_width=True)
 
         st.subheader("Detalhes dos Recebimentos")
