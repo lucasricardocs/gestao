@@ -282,35 +282,47 @@ Cerveja R$ 12,00"""
                 if not sanduiches_precos or not bebidas_precos:
                     st.error("Erro ao carregar cardápios. Verifique os dados no código.")
                     st.stop()
-
-                # Gráfico de vendas
+                    
                 # Gráfico de vendas
                 st.subheader("Vendas por Forma de Pagamento")
                 if vendas:
                     df_vendas = pd.DataFrame(list(vendas.items()), columns=['Forma de Pagamento', 'Valor Total'])
                     
-                    # Gráfico de barras com Altair para melhor controle
-                    chart = alt.Chart(df_vendas).mark_bar().encode(
-                        x=alt.X('Forma de Pagamento:N', title=None, axis=alt.Axis(labels=False, ticks=False)),
-                        y=alt.Y('Valor Total:Q', title=None),
-                        color=alt.Color('Forma de Pagamento:N', legend=alt.Legend(title="Formas de Pagamento")),
-                        tooltip=['Forma de Pagamento', 'Valor Total']
-                    ).properties(
-                        height=400
-                    ).configure_legend(
-                        orient='bottom',
-                        titleFontSize=14,
-                        labelFontSize=12
-                    )
+                    # Gráfico de vendas
+                    st.subheader("Vendas por Forma de Pagamento")
+                    if vendas:
+                        df_vendas = pd.DataFrame(list(vendas.items()), columns=['Forma de Pagamento', 'Valor Total'])
+                        
+                        chart = alt.Chart(df_vendas).mark_bar(size=30).encode(
+                            x=alt.X('Forma de Pagamento:N', 
+                                   axis=alt.Axis(labels=False, ticks=False, domain=False),
+                                   title=None),
+                            y=alt.Y('Valor Total:Q',
+                                   axis=None,
+                                   title=None),
+                            color=alt.Color('Forma de Pagamento:N', 
+                                          legend=alt.Legend(
+                                              title=None,
+                                              orient='bottom',
+                                              labelFontSize=12,
+                                              symbolSize=150,
+                                              padding=10
+                                          )),
+                            tooltip=['Forma de Pagamento', 'Valor Total']
+                        ).properties(
+                            height=350,
+                            padding={"bottom": 40}
+                        ).configure_view(
+                            strokeWidth=0
+                        )
+                        
+                        st.altair_chart(chart, use_container_width=True)
+                    else:
+                        st.info("Nenhum dado de vendas disponível")
                     
-                    st.altair_chart(chart, use_container_width=True)
-                else:
-                    st.info("Nenhum dado de vendas disponível")
-                    
-                    st.markdown("""
-                    """)
+                    # Divisor de página no final
                     st.divider()
-
+                    
                 # --- Cálculo dos impostos e custos fixos ---
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
 
