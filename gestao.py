@@ -154,7 +154,9 @@ with col_title1:
     except FileNotFoundError:
         st.warning("Logo não encontrada")
 with col_title2:
-    st.title("Sistema de Gestão")
+    st.title("
+    
+             Sistema de Gestão")
     st.markdown("<p style='font-weight:bold; font-size:20px; margin-top:-15px'>Clip's Burger</p>", unsafe_allow_html=True)
     #st.markdown("**Clip's Burger**")
 
