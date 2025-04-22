@@ -151,7 +151,7 @@ def display_receipts_table(df):
 # Colunas para Título e Logo
 col_title1, col_title2 = st.columns([0.30, 0.70])
 with col_title1:
-    st.image("logo.png", width=1000)  # Usa a imagem local logo.png
+    st.image("logo.png", width=100)  # Ajustei a largura para melhor visualização
 with col_title2:
     st.title("Sistema de Gestão")
     st.markdown("**Clip's Burger**")
@@ -218,7 +218,11 @@ with tab1:
                             st.error(f"Não foi possível ler o CSV. Erro: {e}")
                             st.stop()
                 else:
-                    df = pd.read_excel(arquivo, dtype=str)
+                    try:
+                        df = pd.read_excel(arquivo, dtype=str)
+                    except ImportError:
+                        st.error("Para ler arquivos XLSX, a biblioteca 'openpyxl' é necessária. Por favor, instale-a com: `pip install openpyxl`")
+                        st.stop()
 
                 st.success(f"Arquivo '{arquivo.name}' carregado com sucesso!")
 
@@ -241,7 +245,7 @@ with tab1:
                 if 'Data' in df_processed.columns:
                     try:
                         df_processed['Data'] = pd.to_datetime(df_processed['Data'])
-                    except:
+                    except Exception:
                         st.warning("Não foi possível converter a coluna 'Data' para formato de data")
 
                 df_processed['Categoria'] = df_processed['Tipo'] + ' ' + df_processed['Bandeira']
@@ -326,7 +330,7 @@ with tab1:
 
                 salario_minimo = 1412.00
                 fgts = salario_minimo * 0.08
-                ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) / 3
+                ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) /3
                 decimo_terceiro = salario_minimo / 12
 
                 custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
@@ -570,10 +574,6 @@ with tab3:
 
         st.subheader("Detalhes dos Recebimentos")
         df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
-        display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].rename(columns={'Data_Formatada': 'Data'}))
-
+        display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].renamecolumns={'Data_Formatada': 'Data', 'Dinheiro': 'Dinheiro (R$)', 'Cartao': 'Cartão (R$)', 'Pix': 'Pix (R$)', 'Total': 'Total (R$)'}))
     else:
-        st.info("Nenhum recebimento cadastrado ainda.")
-
-if __name__ == '__main__':
-    pass
+        st.info("Nenhum dado de recebimento cadastrado.")
