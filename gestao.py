@@ -62,7 +62,7 @@ def local_search_optimization(item_prices, target_value, combination_size, max_i
     best_combination = {k: round_to_50_or_00(v) for k, v in best_combination.items()}
     current_value = calculate_combination_value(best_combination, item_prices)
 
-    best_diff = abs(target_value - current_value) + (1000 if current_value > target_value else 0)
+    best_diff = abs(target_value - current_value) + (10000 if current_value > target_value else 0)
     current_items = list(best_combination.keys())
 
     for _ in range(max_iterations):
@@ -76,7 +76,7 @@ def local_search_optimization(item_prices, target_value, combination_size, max_i
         neighbor[item_to_modify] = max(0.50, neighbor[item_to_modify])
 
         neighbor_value = calculate_combination_value(neighbor, item_prices)
-        neighbor_diff = abs(target_value - neighbor_value) + (1000 if neighbor_value > target_value else 0)
+        neighbor_diff = abs(target_value - neighbor_value) + (10000 if neighbor_value > target_value else 0)
 
         if neighbor_diff < best_diff:
             best_diff = neighbor_diff
