@@ -290,7 +290,7 @@ Cerveja R$ 12,00"""
                     
                     # Gráfico de barras com Altair para melhor controle
                     chart = alt.Chart(df_vendas).mark_bar().encode(
-                        x=alt.X('Forma de Pagamento:N', title=None, axis=alt.Axis(labels=True, ticks=False)),
+                        x=alt.X('Forma de Pagamento:N', title=None, axis=alt.Axis(labels=False, ticks=False)),
                         y=alt.Y('Valor Total:Q', title=None),
                         color=alt.Color('Forma de Pagamento:N', legend=alt.Legend(title="Formas de Pagamento")),
                         tooltip=['Forma de Pagamento', 'Valor Total']
