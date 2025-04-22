@@ -311,14 +311,7 @@ Cerveja R$ 12,00"""
                 st.divider()
 
                 # --- Cálculo dos impostos e custos fixos ---
-                with st.container():
-                    st.markdown("""
-                    """, unsafe_allow_html=True)
-
-                    st.markdown('<div class="custom-box">', unsafe_allow_html=True)
-                    
-                    # Cabeçalho do box
-                    st.markdown('<div class="custom-header">💰 Resumo de Impostos e Custos Fixos</div>', unsafe_allow_html=True)
+                with st.header("💰 Resumo de Impostos e Custos Fixos")
                     
                     # Conteúdo do box
                     col1, col2 = st.columns(2)
