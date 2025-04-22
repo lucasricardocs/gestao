@@ -464,24 +464,26 @@ with tab2:
                 )
 
 # --- Tab 3: Cadastro de Recebimentos ---
+# --- Tab 3: Cadastro de Recebimentos ---
 with tab3:
     st.subheader("💰 Cadastro de Recebimentos Diários")
 
-    # Carrega os dados do CSV
-    def load_data():
-        try:
-            if os.path.exists(CSV_FILE_RECEBIMENTOS):
+    # Função para carregar os dados
+    def load_receipts_data():
+        if os.path.exists(CSV_FILE_RECEBIMENTOS):
+            try:
                 df = pd.read_csv(CSV_FILE_RECEBIMENTOS)
+                # Garante que a coluna Data está no formato datetime
                 df['Data'] = pd.to_datetime(df['Data'])
                 return df
-            return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
-        except Exception as e:
-            st.error(f"Erro ao carregar dados: {e}")
-            return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
+            except Exception as e:
+                st.error(f"Erro ao carregar dados: {e}")
+                return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
+        return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
 
-    # Verifica se já carregou os dados na sessão
+    # Inicializa ou atualiza os dados na session_state
     if 'df_receipts' not in st.session_state:
-        st.session_state.df_receipts = load_data()
+        st.session_state.df_receipts = load_receipts_data()
 
     # Formulário para adicionar novos recebimentos
     with st.form("receipt_form"):
@@ -498,24 +500,29 @@ with tab3:
                 'Cartao': cartao,
                 'Pix': pix
             }
+            # Adiciona o novo registro
             st.session_state.df_receipts = pd.concat(
                 [st.session_state.df_receipts, pd.DataFrame([new_row])],
                 ignore_index=True
             )
-            st.session_state.df_receipts.to_csv(CSV_FILE_RECEBIMENTOS, index=False)
-            st.success("Recebimento adicionado com sucesso!")
+            # Salva no CSV
+            try:
+                st.session_state.df_receipts.to_csv(CSV_FILE_RECEBIMENTOS, index=False)
+                st.success("Recebimento adicionado com sucesso!")
+            except Exception as e:
+                st.error(f"Erro ao salvar dados: {e}")
             st.rerun()
 
     # Mostra os dados existentes
     if not st.session_state.df_receipts.empty:
         st.subheader("📊 Histórico de Recebimentos")
         
-        # Converte para formato de data mais amigável
+        # Cria uma cópia para exibição
         df_display = st.session_state.df_receipts.copy()
         df_display['Data'] = df_display['Data'].dt.strftime('%d/%m/%Y')
         df_display['Total'] = df_display['Dinheiro'] + df_display['Cartao'] + df_display['Pix']
         
-        # Mostra tabela
+        # Mostra tabela formatada
         st.dataframe(
             df_display,
             column_config={
@@ -538,7 +545,7 @@ with tab3:
             height=400
         )
         
-        # Gráfico de pizza - Distribuição
+        # Gráfico de barras - Totais por tipo
         total_payments = st.session_state.df_receipts[['Dinheiro', 'Cartao', 'Pix']].sum()
         st.bar_chart(total_payments)
         
