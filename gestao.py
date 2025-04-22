@@ -292,7 +292,7 @@ Cerveja R$ 12,00"""
                 # --- Cálculo dos impostos e custos fixos ---
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
 
-                salario_minimo = st.number_input("💼 Salário Mínimo (R$)", min_value=0.0, value=1412.0, step=50.0)
+                salario_minimo = st.number_input("💼 Salário Mínimo (R$)", min_value=0.0, value=1518.0, step=50.0)
                 custo_contadora = st.number_input("📋 Custo com Contadora (R$)", min_value=0.0, value=316.0, step=10.0)
 
                 total_vendas = sum(vendas.values())
