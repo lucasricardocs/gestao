@@ -574,16 +574,21 @@ with tab3:
         df_ano = df_receipts[df_receipts['Ano'] == ano_selecionado]
 
         meses_disponiveis = sorted(df_ano['Mes'].unique())
+        # Dicionário de nomes dos meses
         nomes_meses = {
-            1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
-            7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
+        1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun',
+        7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
         }
-        meses_nomes_disponiveis = [f"{m} - {nomes_meses[m]}" for m in meses_disponiveis]
-        
-        if meses_nomes_disponiveis:
-            mes_selecionado_str = st.selectbox("Selecionar Mês", meses_nomes_disponiveis, index=0)
-            mes_selecionado = int(mes_selecionado_str.split(' - ')[0])
-            df_mes = df_ano[df_ano['Mes'] == mes_selecionado]
+
+        # Filtrar meses válidos
+        meses_disponiveis = sorted([m for m in df_ano['Mes'].unique() if 1 <= m <= 12])
+
+        # Formatar meses disponíveis
+        meses_nomes_disponiveis = [f"{m} - {nomes_meses.get(m, 'Inválido')}" for m in meses_disponiveis]
+
+        # Validar se há meses disponíveis
+        if not meses_nomes_disponiveis:
+        st.warning("Nenhum mês válido encontrado nos dados.")
         else:
             df_mes = df_ano.copy()
 
