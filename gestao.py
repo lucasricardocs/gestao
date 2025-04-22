@@ -156,7 +156,6 @@ with col_title1:
 with col_title2:
     st.title("Sistema de Gestão")
     st.markdown("<p style='font-weight:bold; font-size:30px; margin-top:-15px'>Clip's Burger</p>", unsafe_allow_html=True)
-    #st.markdown("**Clip's Burger**")
 
 st.markdown("""
 Bem-vindo(a)! Esta ferramenta ajuda a visualizar suas vendas por forma de pagamento
@@ -289,8 +288,8 @@ Cerveja R$ 12,00"""
                     df_vendas = pd.DataFrame(list(vendas.items()), columns=['Forma de Pagamento', 'Valor Total'])
                     
                     chart = alt.Chart(df_vendas).mark_bar().encode(
-                        x=alt.X('Forma de Pagamento:N', axis=alt.Axis(labels=False, title=None)),  # Remove rótulos e título do eixo X
-                        y=alt.Y('Valor Total:Q', title=None),  # Remove título do eixo Y
+                        x=alt.X('Forma de Pagamento:N', axis=alt.Axis(labels=False, title=None)),
+                        y=alt.Y('Valor Total:Q', title=None),
                         color=alt.Color('Forma de Pagamento:N', legend=alt.Legend(
                             title="Formas de Pagamento",
                             orient='bottom',
@@ -301,112 +300,16 @@ Cerveja R$ 12,00"""
                     ).properties(
                         height=400
                     ).configure_axis(
-                        grid=False  # Remove linhas de grade se desejar
+                        grid=False
                     )
                     
                     st.altair_chart(chart, use_container_width=True)
                 else:
                     st.info("Nenhum dado de vendas disponível")
-                
-                    # Divisor de página no final
-                    st.divider()
 
-                    # --- Cálculo dos impostos e custos fixos ---
-                    with st.container():
-                        st.markdown("""
-                        <style>
-                        .custom-box {
-                            border: 1px solid #e0e0e0;
-                            border-radius: 10px;
-                            padding: 20px;
-                            margin-bottom: 20px;
-                            background-color: #f9f9f9;
-                            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-                        }
-                        .custom-header {
-                            color: #333333;
-                            font-size: 1.3rem;
-                            font-weight: bold;
-                            margin-bottom: 15px;
-                            display: flex;
-                            align-items: center;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-    
-                        st.markdown('<div class="custom-box">', unsafe_allow_html=True)
-                        
-                        # Cabeçalho do box
-                        st.markdown('<div class="custom-header">💰 Resumo de Impostos e Custos Fixos</div>', unsafe_allow_html=True)
-                        
-                        # Conteúdo do box
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            salario_minimo = st.number_input("💼 Salário Mínimo (R$)", min_value=0.0, value=1518.0, step=50.0)
-                            custo_contadora = st.number_input("📋 Custo com Contadora (R$)", min_value=0.0, value=316.0, step=10.0)
-                            
-                        with col2:
-                            total_vendas = sum(vendas.values())
-                            st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
-                        
-                        st.markdown("---")
-                        
-                        col3, col4 = st.columns(2)
-                        
-                        with col3:
-                            aliquota_simples = 0.06
-                            imposto_simples = total_vendas * aliquota_simples
-                            st.metric("📊 Simples Nacional (6%)", format_currency(imposto_simples))
-                            
-                            fgts = salario_minimo * 0.08
-                            ferias_mais_terco = (salario_minimo / 12) + ((salario_minimo / 12) / 3)
-                            decimo_terceiro = salario_minimo / 12
-                            custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
-                            st.metric("👷‍♂️ Custo Mensal com Funcionário CLT", format_currency(custo_funcionario))
-                        
-                        with col4:
-                            st.metric("📋 Custo com Contadora", format_currency(custo_contadora))
-                            
-                            total_custos = imposto_simples + custo_funcionario + custo_contadora
-                            lucro_estimado = total_vendas - total_custos
-                            st.metric("💸 Total de Custos", format_currency(total_custos))
-                            st.metric("📈 Lucro Estimado", format_currency(lucro_estimado))
-                        
-                        # Expanders originais
-                        with st.expander("📘 Como é calculado o Simples Nacional?"):
-                            st.markdown(f"""
-                            - Alíquota aplicada: **6%**
-                            - Fórmula: `faturamento_bruto × 6%`
-                            - Exemplo: `{format_currency(total_vendas)} × 0.06 = {format_currency(imposto_simples)}`
-                            """)
-                        
-                        with st.expander("📘 Como é calculado o custo com funcionário?"):
-                            st.markdown(f"""
-                            - **Salário Mínimo**: {format_currency(salario_minimo)}
-                            - **FGTS (8%)**: {format_currency(fgts)}
-                            - **Férias + 1/3 constitucional**: {format_currency(ferias_mais_terco)}
-                            - **13º proporcional**: {format_currency(decimo_terceiro)}
-                            - **Total**: {format_currency(custo_funcionario)}
-                            """)
-                        
-                        with st.expander("📘 Como é calculado o lucro estimado?"):
-                            st.markdown(f"""
-                            - Fórmula: `faturamento - (impostos + funcionário + contadora)`
-                            - Cálculo:
-                            ```
-                            {format_currency(total_vendas)} - ({format_currency(imposto_simples)} + {format_currency(custo_funcionario)} + {format_currency(custo_contadora)})
-                            = {format_currency(lucro_estimado)}
-                            ```
-                            """)
-                        
-                        st.markdown('</div>', unsafe_allow_html=True)
-    
-                except Exception as e:
-                    st.error(f"Erro no processamento do arquivo: {str(e)}")
-        else:
-            st.info("✨ Aguardando o envio do arquivo de transações para iniciar a análise...")
-                
+                # Divisor de página
+                st.divider()
+
                 # --- Cálculo dos impostos e custos fixos ---
                 with st.container():
                     st.markdown("""
@@ -429,13 +332,13 @@ Cerveja R$ 12,00"""
                     }
                     </style>
                     """, unsafe_allow_html=True)
-                
+
                     st.markdown('<div class="custom-box">', unsafe_allow_html=True)
                     
                     # Cabeçalho do box
                     st.markdown('<div class="custom-header">💰 Resumo de Impostos e Custos Fixos</div>', unsafe_allow_html=True)
                     
-                    # Conteúdo do box em 2 colunas
+                    # Conteúdo do box
                     col1, col2 = st.columns(2)
                     
                     with col1:
@@ -446,10 +349,8 @@ Cerveja R$ 12,00"""
                         total_vendas = sum(vendas.values())
                         st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
                     
-                    # Divisor dentro do box
                     st.markdown("---")
                     
-                    # Seção de métricas
                     col3, col4 = st.columns(2)
                     
                     with col3:
@@ -471,7 +372,7 @@ Cerveja R$ 12,00"""
                         st.metric("💸 Total de Custos", format_currency(total_custos))
                         st.metric("📈 Lucro Estimado", format_currency(lucro_estimado))
                     
-                    # Expanders originais (sem tabs)
+                    # Expanders originais
                     with st.expander("📘 Como é calculado o Simples Nacional?"):
                         st.markdown(f"""
                         - Alíquota aplicada: **6%**
@@ -498,8 +399,13 @@ Cerveja R$ 12,00"""
                         ```
                         """)
                     
-                    st.markdown('</div>', unsafe_allow_html=True)                
-                                
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+            except Exception as e:
+                st.error(f"Erro no processamento do arquivo: {str(e)}")
+    else:
+        st.info("✨ Aguardando o envio do arquivo de transações para iniciar a análise...")
+
 # --- Tab 2: Detalhes das Combinações ---
 with tab2:
     st.header("🧩 Detalhes das Combinações Geradas")
