@@ -24,7 +24,7 @@ def parse_menu_string(menu_data_string):
                 price = float(parts[1].replace(",", "."))
                 menu[name] = price
             except ValueError:
-                st.warning(f"Preço inválido para '{name}'. Ignorando item.")
+                st.warning(f"Preço inválido para '{name}'. Ignorando item: '{line}'.")
         elif line.strip():
             st.warning(f"Formato inválido na linha do cardápio: '{line}'. Ignorando linha.")
     return menu
@@ -66,7 +66,8 @@ def local_search_optimization(item_prices, target_value, combination_size, max_i
     current_items = list(best_combination.keys())
 
     for _ in range(max_iterations):
-        if not current_items: break
+        if not current_items:
+            break
 
         neighbor = best_combination.copy()
         item_to_modify = random.choice(current_items)
@@ -122,7 +123,7 @@ def save_receipts_data(df):
 # Inicialização do estado da sessão (garantindo que 'df_receipts' sempre exista)
 if 'df_receipts' not in st.session_state:
     st.session_state['df_receipts'] = load_receipts_data()
-    st.info("✅ 'df_receipts' foi inicializado (carregando do arquivo).")
+    st.info("✅ 'df_receipts' foi inicializado (carregando do arquivo, se existir).")
 else:
     st.info("✅ 'df_receipts' já existia na sessão.")
 
@@ -161,10 +162,10 @@ Bem-vindo(a)! Esta ferramenta ajuda a visualizar suas vendas por forma de pagame
 e tenta encontrar combinações *hipotéticas* de produtos que poderiam corresponder a esses totais.
 
 **Como usar:**
-1. Ajuste as configurações na barra lateral (para análise do arquivo)
-2. Faça o upload do seu arquivo de transações (.csv ou .xlsx) na aba "📈 Resumo das Vendas"
-3. Cadastre os valores recebidos diariamente na aba "💰 Cadastro de Recebimentos"
-4. Explore os resultados nas abas abaixo
+1. Ajuste as configurações na barra lateral (para análise do arquivo).
+2. Faça o upload do seu arquivo de transações (.csv ou .xlsx) na aba "📈 Resumo das Vendas".
+3. Cadastre os valores recebidos diariamente na aba "💰 Cadastro de Recebimentos".
+4. Explore os resultados nas abas abaixo.
 """)
 st.divider()
 
@@ -235,6 +236,7 @@ with tab1:
                 df_processed = df.copy()
                 df_processed['Tipo'] = df_processed['Tipo'].str.lower().str.strip().fillna('desconhecido')
                 df_processed['Bandeira'] = df_processed['Bandeira'].str.lower().str.strip().fillna('desconhecida')
+                # Correção para o erro 'f' de formatação: converter para numérico com tratamento de erros
                 df_processed['Valor_Numeric'] = pd.to_numeric(
                     df_processed['Valor'].str.replace('.', '', regex=False).str.replace(',', '.', regex=False),
                     errors='coerce'
@@ -244,9 +246,10 @@ with tab1:
                 # Adicionando coluna de data se existir no arquivo
                 if 'Data' in df_processed.columns:
                     try:
-                        df_processed['Data'] = pd.to_datetime(df_processed['Data'])
-                    except Exception:
-                        st.warning("Não foi possível converter a coluna 'Data' para formato de data")
+                        df_processed['Data'] = pd.to_datetime(df_processed['Data'], errors='coerce')
+                        df_processed.dropna(subset=['Data'], inplace=True) # Remove linhas com datas inválidas
+                    except Exception as e:
+                        st.warning(f"Aviso: Não foi possível converter a coluna 'Data' para formato de data corretamente. Erro: {e}")
 
                 df_processed['Categoria'] = df_processed['Tipo'] + ' ' + df_processed['Bandeira']
                 categorias_desejadas = {
@@ -319,18 +322,18 @@ with tab1:
 
                 # ---- Cálculo dos impostos e custos fixos ----
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
-                total_vendas = sum(vendas.values())
+                total_vendas = sum(vendas.values()) if vendas else 0
                 st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
                 st.caption("Este é o valor total das suas vendas.")
 
                 aliquota_simples = 0.06
                 imposto_simples = total_vendas * aliquota_simples
-                st.metric(f"📊 Simples Nacional ({aliquota_simples*100:.0f}%)", format_currency(imposto_simples))
-                st.caption(f"Calculado como {format_currency(total_vendas)} (Faturamento Bruto) x {aliquota_simples*100:.0f}%.")
+                st.metric(f"📊 Simples Nacional ({aliquota_simples * 100:.0f}%)", format_currency(imposto_simples))
+                st.caption(f"Calculado como {format_currency(total_vendas)} (Faturamento Bruto) x{aliquota_simples * 100:.0f}%.")
 
                 salario_minimo = 1412.00
                 fgts = salario_minimo * 0.08
-                ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) /3
+                ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) / 3
                 decimo_terceiro = salario_minimo / 12
 
                 custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
@@ -462,8 +465,11 @@ with tab3:
         if submitted:
             new_receipt = pd.DataFrame([{'Data': pd.to_datetime(data_hoje), 'Dinheiro': dinheiro, 'Cartao': cartao, 'Pix': pix}])
             st.session_state['df_receipts'] = pd.concat([st.session_state['df_receipts'], new_receipt], ignore_index=True)
-            save_receipts_data(st.session_state['df_receipts'])
-            st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
+            try:
+                save_receipts_data(st.session_state['df_receipts'].copy()) # Pass a copy to avoid potential issues
+                st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
+            except Exception as e:
+                st.error(f"Erro ao salvar o recebimento: {e}")
             st.rerun()
 
     st.subheader("Visualização dos Recebimentos")
@@ -486,8 +492,8 @@ with tab3:
         # --- Nova seção para seleção de período ---
         st.subheader("📊 Vendas por Período")
         col_inicio, col_fim = st.columns(2)
-        data_inicial = col_inicio.date_input("Data Inicial", df_receipts['Data'].min().date())
-        data_final = col_fim.date_input("Data Final", df_receipts['Data'].max().date())
+        data_inicial = col_inicio.date_input("Data Inicial", df_receipts['Data'].min().date() if not df_receipts.empty else datetime.now().date())
+        data_final = col_fim.date_input("Data Final", df_receipts['Data'].max().date() if not df_receipts.empty else datetime.now().date())
 
         df_periodo = df_receipts[(df_receipts['Data'].dt.date >= data_inicial) & (df_receipts['Data'].dt.date <= data_final)].copy()
 
@@ -510,11 +516,11 @@ with tab3:
 
         st.subheader("Visualização por Ano, Mês e Dia")
 
-        anos_disponiveis = sorted(df_receipts['Ano'].unique(), reverse=True)
-        ano_selecionado = st.selectbox("Selecionar Ano", anos_disponiveis, index=0)
-        df_ano = df_receipts[df_receipts['Ano'] == ano_selecionado]
+        anos_disponiveis = sorted(df_receipts['Ano'].unique(), reverse=True) if not df_receipts.empty else []
+        ano_selecionado = st.selectbox("Selecionar Ano", anos_disponiveis, index=0 if anos_disponiveis else 0)
+        df_ano = df_receipts[df_receipts['Ano'] == ano_selecionado] if not df_receipts.empty else pd.DataFrame()
 
-        meses_disponiveis = sorted(df_ano['Mes'].unique())
+        meses_disponiveis = sorted(df_ano['Mes'].unique()) if not df_ano.empty else []
         nomes_meses = {1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr', 5: 'Mai', 6: 'Jun', 7: 'Jul', 8: 'Ago', 9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'}
         meses_nomes_disponiveis = [f"{m} - {nomes_meses[m]}" for m in meses_disponiveis]
         mes_selecionado_index = 0
@@ -525,7 +531,7 @@ with tab3:
         else:
             df_mes = df_ano.copy()
 
-        dias_disponiveis = sorted(df_mes['Dia'].unique())
+        dias_disponiveis = sorted(df_mes['Dia'].unique()) if not df_mes.empty else []
         dia_selecionado = st.selectbox("Selecionar Dia", ['Todos'] + list(dias_disponiveis), index=0)
         if dia_selecionado != 'Todos':
             df_dia = df_mes[df_mes['Dia'] == dia_selecionado]
@@ -534,49 +540,61 @@ with tab3:
 
         # Gráfico de pizza para formas de pagamento
         st.subheader("🎨 Distribuição por Forma de Pagamento")
-        df_pie = df_mes[['Dinheiro', 'Cartao', 'Pix']].sum().reset_index()
+        df_pie = df_mes[['Dinheiro', 'Cartao', 'Pix']].sum().reset_index() if not df_mes.empty else pd.DataFrame(columns=['Forma de Pagamento', 'Valor'])
         df_pie.columns = ['Forma de Pagamento', 'Valor']
 
-        pie_chart = alt.Chart(df_pie).mark_arc().encode(
-            theta=alt.Theta(field="Valor", type="quantitative"),
-            color=alt.Color(field="Forma de Pagamento", type="nominal"),
-            tooltip=["Forma de Pagamento", "Valor"]
-        ).properties(
-            title="Distribuição de Recebimentos por Forma de Pagamento"
-        )
-        st.altair_chart(pie_chart, use_container_width=True)
+        if not df_pie.empty and df_pie['Valor'].sum() > 0:
+            pie_chart = alt.Chart(df_pie).mark_arc().encode(
+                theta=alt.Theta(field="Valor", type="quantitative"),
+                color=alt.Color(field="Forma de Pagamento", type="nominal"),
+                tooltip=["Forma de Pagamento", "Valor"]
+            ).properties(
+                title="Distribuição de Recebimentos por Forma de Pagamento"
+            )
+            st.altair_chart(pie_chart, use_container_width=True)
+        else:
+            st.info("Nenhum dado de recebimento para exibir a distribuição.")
 
         st.divider()
 
         st.subheader("Totais Diários")
-        df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
-        plot_diario = alt.Chart(df_dia).mark_bar().encode(
-            x=alt.X('Data_Formatada:N', axis=alt.Axis(title='Data')),
-            y=alt.Y('Total:Q', axis=alt.Axis(title='Valor (R$)')),
-            tooltip=['Data_Formatada', 'Total']
-        ).properties(
-            title=f"Total Recebido em {dia_selecionado if dia_selecionado != 'Todos' else 'Todos os Dias'} de {nomes_meses.get(mes_selecionado, '') if meses_nomes_disponiveis else 'Todos os Meses'} de {ano_selecionado}"
-        ).interactive()
-        st.altair_chart(plot_diario, use_container_width=True)
+        if not df_dia.empty:
+            df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
+            plot_diario = alt.Chart(df_dia).mark_bar().encode(
+                x=alt.X('Data_Formatada:N', axis=alt.Axis(title='Data')),
+                y=alt.Y('Total:Q', axis=alt.Axis(title='Valor (R$)')),
+                tooltip=['Data_Formatada', 'Total']
+            ).properties(
+                title=f"Total Recebido em {dia_selecionado if dia_selecionado != 'Todos' else 'Todos os Dias'} de {nomes_meses.get(mes_selecionado, '') if meses_nomes_disponiveis else 'Todos os Meses'} de {ano_selecionado}"
+            ).interactive()
+            st.altair_chart(plot_diario, use_container_width=True)
+        else:
+            st.info("Nenhum dado de recebimento para exibir os totais diários.")
 
         st.subheader("Gráfico de Formas de Pagamento")
-        df_melted = df_dia.melt(id_vars=['Data'], value_vars=['Dinheiro', 'Cartao', 'Pix'], var_name='Forma', value_name='Valor')
-        df_melted['Data_Formatada'] = df_melted['Data'].dt.strftime('%d/%m/%Y')
-        chart_pagamentos = alt.Chart(df_melted).mark_bar().encode(
-            x=alt.X('Data_Formatada:N', axis=alt.Axis(title='Data')),
-            y=alt.Y('Valor:Q', axis=alt.Axis(title='Valor (R$)')),
-            color='Forma:N',
-            tooltip=['Data_Formatada', 'Forma', 'Valor']
-        ).properties(
-            title=f"Recebimentos por Forma de Pagamento em {dia_selecionado if dia_selecionado != 'Todos' else 'Todos os Dias'} de {nomes_meses.get(mes_selecionado, '') if meses_nomes_disponiveis else 'Todos os Meses'} de {ano_selecionado}"
-        ).interactive() # Tornar o gráfico interativo
-        st.altair_chart(chart_pagamentos, use_container_width=True)
+        if not df_dia.empty:
+            df_melted = df_dia.melt(id_vars=['Data'], value_vars=['Dinheiro', 'Cartao', 'Pix'], var_name='Forma', value_name='Valor')
+            df_df_melted['Data_Formatada'] = df_melted['Data'].dt.strftime('%d/%m/%Y')
+            chart_pagamentos = alt.Chart(df_melted).mark_bar().encode(
+                x=alt.X('Data_Formatada:N', axis=alt.Axis(title='Data')),
+                y=alt.Y('Valor:Q', axis=alt.Axis(title='Valor (R$)')),
+                color='Forma:N',
+                tooltip=['Data_Formatada', 'Forma', 'Valor']
+            ).properties(
+                title=f"Recebimentos por Forma de Pagamento em {dia_selecionado if dia_selecionado != 'Todos' else 'Todos os Dias'} de {nomes_meses.get(mes_selecionado, '') if meses_nomes_disponiveis else 'Todos os Meses'} de {ano_selecionado}"
+            ).interactive() # Tornar o gráfico interativo
+            st.altair_chart(chart_pagamentos, use_container_width=True)
+        else:
+            st.info("Nenhum dado de recebimento para exibir o gráfico de formas de pagamento.")
 
         st.subheader("Detalhes dos Recebimentos")
-        df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
-        display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].rename(
-            columns={'Data_Formatada': 'Data', 'Dinheiro': 'Dinheiro (R$)', 'Cartao': 'Cartão (R$)', 'Pix': 'Pix (R$)', 'Total': 'Total (R$)'}
-        ))
+        if not df_dia.empty:
+            df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
+            display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].rename(
+                columns={'Data_Formatada': 'Data', 'Dinheiro': 'Dinheiro (R$)', 'Cartao': 'Cartão (R$)', 'Pix': 'Pix (R$)', 'Total': 'Total (R$)'}
+            ))
+        else:
+            st.info("Nenhum dado de recebimento cadastrado para exibir os detalhes.")
     else:
         st.info("Nenhum dado de recebimento cadastrado.")
 
