@@ -589,8 +589,6 @@ with tab3:
         # Validar se há meses disponíveis
         if not meses_nomes_disponiveis:
         st.warning("Nenhum mês válido encontrado nos dados.")
-        else:
-            df_mes = df_ano.copy()
 
         dias_disponiveis = sorted(df_mes['Dia'].unique())
         dia_selecionado = st.selectbox("Selecionar Dia", ['Todos'] + list(dias_disponiveis), index=0)
