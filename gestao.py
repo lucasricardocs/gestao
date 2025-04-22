@@ -467,119 +467,81 @@ with tab2:
 with tab3:
     st.subheader("💰 Cadastro de Recebimentos Diários")
 
-    # Carrega os dados do CSV no session_state se ainda não estiver carregado
-    if 'df_receipts' not in st.session_state or st.session_state['df_receipts'].empty:
-        st.session_state['df_receipts'] = load_receipts_data()
+    # Carrega os dados do CSV
+    def load_data():
+        try:
+            if os.path.exists(CSV_FILE_RECEBIMENTOS):
+                df = pd.read_csv(CSV_FILE_RECEBIMENTOS)
+                df['Data'] = pd.to_datetime(df['Data'])
+                return df
+            return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
+        except Exception as e:
+            st.error(f"Erro ao carregar dados: {e}")
+            return pd.DataFrame(columns=['Data', 'Dinheiro', 'Cartao', 'Pix'])
 
-    with st.form("daily_receipt_form"):
-        data_hoje = st.date_input("Data do Recebimento", datetime.now().date())
-        col1, col2, col3 = st.columns(3)
-        dinheiro = col1.number_input("Dinheiro (R$)", min_value=0.0, step=0.50, format="%.2f")
-        cartao = col2.number_input("Cartão (R$)", min_value=0.0, step=0.50, format="%.2f")
-        pix = col3.number_input("Pix (R$)", min_value=0.0, step=0.50, format="%.2f")
-        submitted = st.form_submit_button("Adicionar Recebimento")
+    # Verifica se já carregou os dados na sessão
+    if 'df_receipts' not in st.session_state:
+        st.session_state.df_receipts = load_data()
 
-        if submitted:
-            new_receipt = pd.DataFrame([{
-                'Data': pd.to_datetime(data_hoje),
+    # Formulário para adicionar novos recebimentos
+    with st.form("receipt_form"):
+        cols = st.columns(3)
+        data = cols[0].date_input("Data", datetime.now())
+        dinheiro = cols[1].number_input("Dinheiro (R$)", min_value=0.0, step=0.01)
+        cartao = cols[2].number_input("Cartão (R$)", min_value=0.0, step=0.01)
+        pix = st.number_input("Pix (R$)", min_value=0.0, step=0.01)
+        
+        if st.form_submit_button("Adicionar Recebimento"):
+            new_row = {
+                'Data': pd.to_datetime(data),
                 'Dinheiro': dinheiro,
                 'Cartao': cartao,
                 'Pix': pix
-            }])
-            
-            # Concatena corretamente com os dados existentes
-            st.session_state['df_receipts'] = pd.concat(
-                [st.session_state['df_receipts'], new_receipt],
+            }
+            st.session_state.df_receipts = pd.concat(
+                [st.session_state.df_receipts, pd.DataFrame([new_row])],
                 ignore_index=True
             )
-            
-            # Salva no CSV
-            save_receipts_data(st.session_state['df_receipts'])
-            st.success(f"Recebimento de {data_hoje.strftime('%d/%m/%Y')} adicionado e salvo!")
+            st.session_state.df_receipts.to_csv(CSV_FILE_RECEBIMENTOS, index=False)
+            st.success("Recebimento adicionado com sucesso!")
             st.rerun()
 
-    # Verificação robusta para mostrar os dados
-    if not st.session_state['df_receipts'].empty:
-        df_receipts = st.session_state['df_receipts'].copy()
+    # Mostra os dados existentes
+    if not st.session_state.df_receipts.empty:
+        st.subheader("📊 Histórico de Recebimentos")
         
-        # Garante que a coluna Data está no formato correto
-        if not pd.api.types.is_datetime64_any_dtype(df_receipts['Data']):
-            try:
-                df_receipts['Data'] = pd.to_datetime(df_receipts['Data'])
-            except Exception as e:
-                st.error(f"Erro ao converter a coluna 'Data': {e}")
-                st.stop()
-
-        # Calcula totais e prepara dados
-        df_receipts['Total'] = df_receipts['Dinheiro'] + df_receipts['Cartao'] + df_receipts['Pix']
-        df_receipts['Ano'] = df_receipts['Data'].dt.year
-        df_receipts['Mes'] = df_receipts['Data'].dt.month
-        df_receipts['Dia'] = df_receipts['Data'].dt.day
-        df_receipts['Data_Formatada'] = df_receipts['Data'].dt.strftime('%d/%m/%Y')
-
-        # --- Seção de Visualização ---
-        st.subheader("📊 Visualização dos Recebimentos")
+        # Converte para formato de data mais amigável
+        df_display = st.session_state.df_receipts.copy()
+        df_display['Data'] = df_display['Data'].dt.strftime('%d/%m/%Y')
+        df_display['Total'] = df_display['Dinheiro'] + df_display['Cartao'] + df_display['Pix']
         
-        # Seletor de Período
-        st.subheader("Filtrar por Período")
-        col_inicio, col_fim = st.columns(2)
-        data_inicial = col_inicio.date_input("Data Inicial", df_receipts['Data'].min().date())
-        data_final = col_fim.date_input("Data Final", df_receipts['Data'].max().date())
+        # Mostra tabela
+        st.dataframe(
+            df_display,
+            column_config={
+                "Data": "Data",
+                "Dinheiro": st.column_config.NumberColumn("Dinheiro (R$)", format="%.2f"),
+                "Cartao": st.column_config.NumberColumn("Cartão (R$)", format="%.2f"),
+                "Pix": st.column_config.NumberColumn("Pix (R$)", format="%.2f"),
+                "Total": st.column_config.NumberColumn("Total (R$)", format="%.2f")
+            },
+            hide_index=True,
+            use_container_width=True
+        )
 
-        # Filtra o período
-        df_periodo = df_receipts[
-            (df_receipts['Data'].dt.date >= data_inicial) & 
-            (df_receipts['Data'].dt.date <= data_final)
-        ].copy()
-
-        if not df_periodo.empty:
-            # Gráfico de Linha - Total por Dia
-            st.subheader("Total Recebido por Dia")
-            df_diario = df_periodo.groupby('Data_Formatada')['Total'].sum().reset_index()
-            
-            chart = alt.Chart(df_diario).mark_line(point=True).encode(
-                x='Data_Formatada:T',
-                y='Total:Q',
-                tooltip=['Data_Formatada', 'Total']
-            ).properties(
-                height=400,
-                width=600
-            )
-            st.altair_chart(chart, use_container_width=True)
-
-            # Gráfico de Barras - Formas de Pagamento
-            st.subheader("Distribuição por Forma de Pagamento")
-            df_melted = df_periodo.melt(
-                id_vars=['Data_Formatada'], 
-                value_vars=['Dinheiro', 'Cartao', 'Pix'],
-                var_name='Forma',
-                value_name='Valor'
-            )
-            
-            bar_chart = alt.Chart(df_melted).mark_bar().encode(
-                x='Data_Formatada:T',
-                y='Valor:Q',
-                color='Forma:N',
-                tooltip=['Data_Formatada', 'Forma', 'Valor']
-            )
-            st.altair_chart(bar_chart, use_container_width=True)
-
-            # Tabela de Detalhes
-            st.subheader("Detalhes dos Recebimentos")
-            st.dataframe(
-                df_periodo[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']],
-                column_config={
-                    'Data_Formatada': 'Data',
-                    'Dinheiro': st.column_config.NumberColumn('Dinheiro (R$)', format="%.2f"),
-                    'Cartao': st.column_config.NumberColumn('Cartão (R$)', format="%.2f"),
-                    'Pix': st.column_config.NumberColumn('Pix (R$)', format="%.2f"),
-                    'Total': st.column_config.NumberColumn('Total (R$)', format="%.2f")
-                },
-                hide_index=True,
-                use_container_width=True
-            )
-        else:
-            st.warning("Nenhum dado encontrado para o período selecionado")
+        # Gráficos
+        st.subheader("📈 Visualização dos Dados")
+        
+        # Gráfico de linhas - Evolução diária
+        st.line_chart(
+            st.session_state.df_receipts.set_index('Data')[['Dinheiro', 'Cartao', 'Pix']],
+            height=400
+        )
+        
+        # Gráfico de pizza - Distribuição
+        total_payments = st.session_state.df_receipts[['Dinheiro', 'Cartao', 'Pix']].sum()
+        st.bar_chart(total_payments)
+        
     else:
         st.info("Nenhum recebimento cadastrado ainda. Adicione seu primeiro recebimento acima.")
 
