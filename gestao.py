@@ -308,22 +308,29 @@ with tab1:
 
                 # ---- Cálculo dos impostos e custos fixos ----
                 st.subheader("💰 Resumo de Impostos e Custos Fixos")
+
                 total_vendas = sum(vendas.values())
                 st.metric("💵 Faturamento Bruto", format_currency(total_vendas))
 
+                # Imposto Simples Nacional (6%)
                 aliquota_simples = 0.06
                 imposto_simples = total_vendas * aliquota_simples
                 st.metric("📊 Simples Nacional (6%)", format_currency(imposto_simples))
 
+                # Custo com funcionário (CLT, salário mínimo)
                 salario_minimo = 1412.00
                 fgts = salario_minimo * 0.08
-                ferias_mais_terco = salario_minimo / 12 + (salario_minimo / 12) / 3
+                ferias_mais_terco = (salario_minimo / 12) + ((salario_minimo / 12) / 3)
                 decimo_terceiro = salario_minimo / 12
-
                 custo_funcionario = salario_minimo + fgts + ferias_mais_terco + decimo_terceiro
                 st.metric("👷‍♂️ Custo Mensal com Funcionário CLT", format_currency(custo_funcionario))
 
-                total_custos = imposto_simples + custo_funcionario
+                # Custo fixo com contabilidade
+                custo_contadora = 316.00
+                st.metric("📋 Custo com Contadora", format_currency(custo_contadora))
+
+                # Total de custos
+                total_custos = imposto_simples + custo_funcionario + custo_contadora
                 lucro_estimado = total_vendas - total_custos
 
                 st.metric("💸 Total de Custos", format_currency(total_custos))
