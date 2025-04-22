@@ -574,8 +574,9 @@ with tab3:
 
         st.subheader("Detalhes dos Recebimentos")
         df_dia['Data_Formatada'] = df_dia['Data'].dt.strftime('%d/%m/%Y')
-        display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].rename
-                               columns={'Data_Formatada': 'Data', 'Dinheiro': 'Dinheiro (R$)', 'Cartao': 'Cartão (R$)', 'Pix': 'Pix (R$)', 'Total': 'Total (R$)'}))
+        display_receipts_table(df_dia[['Data_Formatada', 'Dinheiro', 'Cartao', 'Pix', 'Total']].rename(
+            columns={'Data_Formatada': 'Data', 'Dinheiro': 'Dinheiro (R$)', 'Cartao': 'Cartão (R$)', 'Pix': 'Pix (R$)', 'Total': 'Total (R$)'}
+        ))
     else:
         st.info("Nenhum dado de recebimento cadastrado.")
 
